@@ -140,3 +140,217 @@
     cursor: pointer;
     border: none;
 }
+
+.media-modal {
+    width: 90vw;
+    max-width: 1200px;
+    background-color: black; /* Cinema feeling */
+    border-radius: 8px;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    box-shadow: 0 30px 60px rgba(0,0,0,0.5);
+    animation: slideUp 0.3s ease-out;
+}
+
+.media-modal-header {
+    background-color: var(--header-bg); /* Deep Ruby */
+    color: white;
+    padding: 10px 20px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.media-modal-header h3 {
+    margin: 0;
+    font-size: 1em;
+    font-weight: normal;
+}
+
+.video-wrapper {
+    width: 100%;
+    /* Aspect Ratio Hack or simple flexible height */
+    background: black;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+/* --- The Play Button (Add this to series-detail.css or here) --- */
+.track-action-btn.play {
+    background-color: var(--button-bg); /* Rose Red */
+    color: white;
+    padding-left: 15px;
+    padding-right: 15px;
+}
+
+.track-action-btn.play:hover {
+    background-color: var(--ui-header); /* Vivid Raspberry */
+    transform: scale(1.05);
+}
+
+@keyframes slideUp {
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+
+/* --- End of Professional Modal Styles --- */
+
+/* --- CINEMA MODE (Full Screen Player) --- */
+
+.modal-overlay.cinema-mode {
+    background-color: black; /* Total blackout */
+    padding: 0;
+    backdrop-filter: none;
+}
+
+.cinema-wrapper {
+    width: 100vw;
+    height: 100vh;
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: black;
+}
+
+.cinema-video {
+    width: 100%;
+    height: 100%;
+    max-height: 100vh;
+    outline: none;
+}
+
+/* --- Fading Controls --- */
+
+.cinema-header {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    padding: 20px 40px;
+    background: linear-gradient(to bottom, rgba(0,0,0,0.8), transparent);
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    z-index: 10;
+    transition: opacity 0.5s ease-in-out;
+}
+
+.cinema-header.visible { opacity: 1; pointer-events: auto; }
+.cinema-header.hidden { opacity: 0; pointer-events: none; }
+
+.cinema-title h3 {
+    color: white;
+    margin: 0;
+    font-size: 1.5em;
+    text-shadow: 0 2px 4px rgba(0,0,0,0.5);
+}
+
+.cinema-subtitle {
+    color: rgba(255,255,255,0.7);
+    font-size: 0.9em;
+}
+
+.cinema-close-btn {
+    background: rgba(255,255,255,0.1);
+    border: none;
+    color: white;
+    font-size: 2em;
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+    cursor: pointer;
+    line-height: 1;
+    transition: background 0.2s;
+}
+
+.cinema-close-btn:hover {
+    background: var(--ui-header); /* Raspberry */
+}
+
+/* --- Navigation Arrows --- */
+.cinema-controls {
+    position: absolute;
+    top: 50%;
+    left: 0; 
+    right: 0;
+    transform: translateY(-50%);
+    display: flex;
+    justify-content: space-between;
+    padding: 0 20px;
+    pointer-events: none; /* Let clicks pass through to video */
+    transition: opacity 0.5s ease;
+}
+
+.cinema-controls.visible { opacity: 1; }
+.cinema-controls.hidden { opacity: 0; }
+
+.nav-btn {
+    pointer-events: auto; /* Re-enable clicks for buttons */
+    background: rgba(0,0,0,0.5);
+    color: white;
+    border: none;
+    font-size: 3em;
+    padding: 10px 20px;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: transform 0.2s, background 0.2s;
+}
+
+.nav-btn:hover {
+    background: var(--ui-header);
+    transform: scale(1.1);
+}
+
+/* --- Document Viewer Modes --- */
+
+.modal-overlay.cinema-mode.white-mode {
+    background-color: white; /* Documents need light backing */
+}
+
+.full-screen-frame {
+    width: 100vw;
+    height: 100vh;
+    border: none;
+    display: block;
+}
+
+/* --- The Minimalist "Get Out" Button --- */
+.minimal-close-btn {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    z-index: 9999;
+    
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+    border: none;
+    
+    background-color: rgba(0, 0, 0, 0.1); /* Subtle default */
+    color: #333;
+    font-size: 2rem;
+    line-height: 1;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.minimal-close-btn:hover {
+    background-color: var(--ui-header); /* Raspberry */
+    color: white;
+    transform: scale(1.1) rotate(90deg); /* Playful interaction */
+}
+
+/* Dark mode override for Video Player if using this class there too */
+.cinema-mode:not(.white-mode) .minimal-close-btn {
+    background-color: rgba(255, 255, 255, 0.1);
+    color: white;
+}
+

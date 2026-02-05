@@ -10,6 +10,8 @@ export function DeleteMediaGroup(arg1:number):Promise<void>;
 
 export function DownloadBackup(arg1:number):Promise<string>;
 
+export function ExportMediaAsset(arg1:number,arg2:string):Promise<void>;
+
 export function GetAllLibraryAssets():Promise<Array<main.MediaAsset>>;
 
 export function GetCompendiumData():Promise<main.CompendiumData>;
@@ -29,6 +31,8 @@ export function SaveEntry(arg1:main.MangaEntry):Promise<void>;
 export function SaveMediaAsset(arg1:main.MediaAsset,arg2:string):Promise<void>;
 
 export function SaveMediaGroup(arg1:main.MediaGroup):Promise<void>;
+
+export function UpdateAssetOrder(arg1:Array<main.MediaAsset>):Promise<void>;
 
 export function UpdateCompendiumData(arg1:main.CompendiumData):Promise<void>;
 

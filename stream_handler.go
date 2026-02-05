@@ -3,71 +3,62 @@ package main
 import (
 	"bytes"
 	"fmt"
+	"log"
 	"net/http"
 	"strconv"
 	"strings"
 	"time"
 )
 
-type MediaStreamHandler struct {
-	app *App
-}
+// StartMediaServer spins up a dedicated HTTP server for streaming
+func StartMediaServer(app *App) {
+	mux := http.NewServeMux()
 
-func NewMediaStreamHandler(app *App) *MediaStreamHandler {
-	return &MediaStreamHandler{app: app}
-}
+	mux.HandleFunc("/stream/", func(w http.ResponseWriter, r *http.Request) {
+		// 1. CORS Headers
+		w.Header().Set("Access-Control-Allow-Origin", "*")
+		w.Header().Set("Access-Control-Allow-Methods", "GET, OPTIONS")
+		w.Header().Set("Access-Control-Allow-Headers", "*")
 
-func (h *MediaStreamHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	// 1. Log EVERY request to see if we are even intercepting
-	// (Filter out standard assets to avoid spam, show only potential stream candidates)
-	if strings.Contains(r.URL.Path, "stream") {
-		fmt.Printf("[StreamHandler] Request received: %s | Method: %s\n", r.URL.Path, r.Method)
+		if r.Method == "OPTIONS" {
+			w.WriteHeader(http.StatusOK)
+			return
+		}
+
+		// 2. Parse ID (ROBUST VERSION)
+		// We expect: /stream/123  OR  /stream/123/chapter1.mp4
+		path := strings.TrimPrefix(r.URL.Path, "/stream/")
+
+		// Split by slash and take the first part (the ID)
+		// This ignores "/filename.epub" at the end
+		parts := strings.Split(path, "/")
+		idStr := parts[0]
+
+		assetID, err := strconv.Atoi(idStr)
+		if err != nil {
+			log.Printf("[MediaServer] Invalid ID format: %s", idStr)
+			http.Error(w, "Invalid ID", http.StatusBadRequest)
+			return
+		}
+
+		// 3. Fetch Blob
+		fmt.Printf("[MediaServer] Streaming Asset %d\n", assetID)
+		data, mimeType, err := app.db.FetchAssetBlob(assetID)
+		if err != nil {
+			http.Error(w, "Not Found", http.StatusNotFound)
+			return
+		}
+
+		// 4. Serve Content
+		w.Header().Set("Content-Type", mimeType)
+		reader := bytes.NewReader(data)
+		// We use "file" as a generic name, or you could query the real filename if you wanted perfect "Save As" behavior
+		http.ServeContent(w, r, "file", time.Now(), reader)
+	})
+
+	addr := "127.0.0.1:40001"
+	fmt.Printf("[MediaServer] 🚀 Listening on http://%s\n", addr)
+	if err := http.ListenAndServe(addr, mux); err != nil {
+		log.Fatal("[MediaServer] Failed to start:", err)
 	}
-
-	// 2. Check prefix
-	if !strings.HasPrefix(r.URL.Path, "/stream/") {
-		// Pass through to Wails AssetServer
-		http.NotFound(w, r)
-		return
-	}
-
-	// 3. Extract ID
-	idStr := strings.TrimPrefix(r.URL.Path, "/stream/")
-	assetID, err := strconv.Atoi(idStr)
-	if err != nil {
-		fmt.Printf("[StreamHandler] ❌ Error: Invalid ID '%s'\n", idStr)
-		http.Error(w, "Invalid Asset ID", http.StatusBadRequest)
-		return
-	}
-
-	// 4. Safety Check: Is DB ready?
-	if h.app.db == nil {
-		fmt.Println("[StreamHandler] ❌ Error: Database connection is nil!")
-		http.Error(w, "Database not initialized", http.StatusInternalServerError)
-		return
-	}
-
-	// 5. Fetch from DB
-	fmt.Printf("[StreamHandler] 🔍 Fetching blob for Asset ID: %d...\n", assetID)
-	data, mimeType, err := h.app.db.FetchAssetBlob(assetID)
-	if err != nil {
-		fmt.Printf("[StreamHandler] ❌ DB Error: %v\n", err)
-		http.Error(w, "Asset not found in DB", http.StatusNotFound)
-		return
-	}
-
-	// 6. Log Success Details
-	dataSize := len(data)
-	fmt.Printf("[StreamHandler] ✅ Success! Found %d bytes. Mime: %s\n", dataSize, mimeType)
-
-	if dataSize == 0 {
-		fmt.Println("[StreamHandler] ⚠️ WARNING: File blob is empty (0 bytes). Did the upload work?")
-	}
-
-	// 7. Serve
-	w.Header().Set("Content-Type", mimeType)
-	w.Header().Set("Access-Control-Allow-Origin", "*") // Fix CORS just in case
-
-	reader := bytes.NewReader(data)
-	http.ServeContent(w, r, "streamed_video", time.Now(), reader)
 }

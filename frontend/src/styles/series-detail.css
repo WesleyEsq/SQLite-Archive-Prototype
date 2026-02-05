@@ -144,3 +144,42 @@
     width: 24px; height: 24px; border-radius: 50%; border: 2px solid var(--ui-header);
     display: flex; align-items: center; justify-content: center; margin-right: 15px; font-size: 1.2em; line-height: 1;
 }
+
+
+/* --- Upload Loading Animation --- */
+
+/* The container for the loading state */
+.upload-loading-container {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    color: var(--ui-header);
+    font-weight: bold;
+    font-size: 0.9em;
+    padding: 5px;
+}
+
+/* The Spinner/Pulse Circle */
+.upload-spinner {
+    width: 20px;
+    height: 20px;
+    border: 3px solid rgba(201, 24, 74, 0.3);
+    border-radius: 50%;
+    border-top-color: var(--ui-header); /* Vivid Raspberry */
+    animation: spin 1s ease-in-out infinite;
+}
+
+@keyframes spin {
+    to { transform: rotate(360deg); }
+}
+
+/* Optional: Make the text pulse too */
+.upload-text {
+    animation: pulseText 1.5s infinite;
+}
+
+@keyframes pulseText {
+    0% { opacity: 0.6; }
+    50% { opacity: 1; }
+    100% { opacity: 0.6; }
+}

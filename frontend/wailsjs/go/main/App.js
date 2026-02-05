@@ -18,6 +18,10 @@ export function DownloadBackup(arg1) {
   return window['go']['main']['App']['DownloadBackup'](arg1);
 }
 
+export function ExportMediaAsset(arg1, arg2) {
+  return window['go']['main']['App']['ExportMediaAsset'](arg1, arg2);
+}
+
 export function GetAllLibraryAssets() {
   return window['go']['main']['App']['GetAllLibraryAssets']();
 }
@@ -56,6 +60,10 @@ export function SaveMediaAsset(arg1, arg2) {
 
 export function SaveMediaGroup(arg1) {
   return window['go']['main']['App']['SaveMediaGroup'](arg1);
+}
+
+export function UpdateAssetOrder(arg1) {
+  return window['go']['main']['App']['UpdateAssetOrder'](arg1);
 }
 
 export function UpdateCompendiumData(arg1) {

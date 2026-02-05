@@ -165,3 +165,35 @@ func (db *DB) DeleteMediaAsset(id int) error {
 	_, err := db.conn.Exec("DELETE FROM media_assets WHERE id = ?", id)
 	return err
 }
+
+// FetchAssetBlob retrieves the raw file data for streaming.
+func (db *DB) FetchAssetBlob(assetID int) ([]byte, string, error) {
+	var data []byte
+	var mimeType string
+	// Ensure the column names match your Schema exactly!
+	query := "SELECT file_blob, mime_type FROM media_assets WHERE id = ?"
+	err := db.conn.QueryRow(query, assetID).Scan(&data, &mimeType)
+	if err != nil {
+		return nil, "", err
+	}
+	return data, mimeType, nil
+}
+
+// UpdateAssetOrder takes a list of assets and updates their sort_order in the DB
+func (db *DB) UpdateAssetOrder(assets []MediaAsset) error {
+	tx, err := db.conn.Begin()
+	if err != nil {
+		return err
+	}
+	defer tx.Rollback()
+
+	query := "UPDATE media_assets SET sort_order = ? WHERE id = ?"
+
+	for _, asset := range assets {
+		if _, err := tx.Exec(query, asset.SortOrder, asset.ID); err != nil {
+			return err
+		}
+	}
+
+	return tx.Commit()
+}

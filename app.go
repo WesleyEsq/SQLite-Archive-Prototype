@@ -44,14 +44,19 @@ func NewApp() *App {
 }
 
 // Startup is called when the app starts.
+// app.go
+
 func (a *App) Startup(ctx context.Context) {
 	a.ctx = ctx
-	// Initialize the Database logic defined in database.go
 	database, err := InitDB("./compendium.db")
 	if err != nil {
 		log.Fatal("Failed to initialize database:", err)
 	}
 	a.db = database
+
+	// --- ADD THIS LINE ---
+	// Start the dedicated media server in the background
+	go StartMediaServer(a)
 }
 
 // --- Controller Methods (Exposed to Wails) ---
@@ -215,4 +220,32 @@ func (a *App) DeleteMediaGroup(id int) error {
 
 func (a *App) DeleteMediaAsset(id int) error {
 	return a.db.DeleteMediaAsset(id)
+}
+
+// ExportMediaAsset opens a save dialog and writes the file to disk
+func (a *App) ExportMediaAsset(assetID int, filename string) error {
+	// 1. Fetch data
+	data, _, err := a.db.FetchAssetBlob(assetID)
+	if err != nil {
+		return fmt.Errorf("fetch error: %w", err)
+	}
+
+	// 2. Open Save Dialog
+	selection, err := runtime.SaveFileDialog(a.ctx, runtime.SaveDialogOptions{
+		Title:           "Save File",
+		DefaultFilename: filename,
+	})
+
+	// User cancelled
+	if err != nil || selection == "" {
+		return nil
+	}
+
+	// 3. Write File
+	return os.WriteFile(selection, data, 0644)
+}
+
+// UpdateAssetOrder updates the sort order of a list of assets
+func (a *App) UpdateAssetOrder(assets []MediaAsset) error {
+	return a.db.UpdateAssetOrder(assets)
 }
