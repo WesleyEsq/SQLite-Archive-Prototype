@@ -1,13 +1,13 @@
 /* --- The Table --- */
 .compendium-table {
   width: 100%;
-  max-width: 1100px;
+  /* REMOVED: max-width: 1100px; -> Now it fills the space! */
   border-collapse: separate;
   border-spacing: 0;
-  border-radius: 8px 8px 0 0;
+  /* We keep the radius because it looks nice inside the card */
+  border-radius: 8px 8px 0 0; 
   overflow: hidden;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
-  margin-top: 20px;
+  margin-top: 0; /* Removed margin since it's inside the card now */
 }
 
 .compendium-table th {
@@ -28,7 +28,7 @@
   vertical-align: middle;
 }
 
-/* Alternating Rows */
+/* Alternating Rows (Kept your original pinks!) */
 .compendium-table tr {
     background-color: var(--row-color-1);
 }
@@ -53,30 +53,50 @@
     box-shadow: inset 3px 0 0 var(--ui-header);
 }
 
-/* Table Buttons */
-.compendium-table td button {
-  padding: 6px 12px;
-  background-color: var(--button-bg);
-  color: white;
-  border: none;
-  border-radius: 4px;
-  cursor: pointer;
-  font-size: 0.85em;
-  font-weight: 600;
-  transition: background-color 0.2s;
-  margin-right: 5px;
+/* --- NEW: Icon Action Buttons --- */
+/* This replaces the old big buttons with sleek icons */
+.actions-cell {
+    white-space: nowrap;
+    text-align: right; /* Aligns icons to the right */
 }
-.compendium-table td button:hover { background-color: #A02046; }
 
-.delete-button { background-color: var(--header-bg) !important; }
+.icon-action-btn {
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    padding: 8px;
+    border-radius: 6px;
+    color: var(--ui-header); /* Use your theme color */
+    transition: all 0.2s ease;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    margin-left: 5px;
+}
 
+.icon-action-btn:hover {
+    background-color: rgba(201, 24, 74, 0.1); /* Light pink hover */
+    transform: scale(1.1);
+}
+
+.icon-action-btn.delete { color: #d00000; }
+.icon-action-btn.delete:hover { background-color: rgba(208, 0, 0, 0.1); }
+
+/* --- Drag Handle --- */
 .drag-handle-cell {
     color: var(--border-color);
     cursor: grab;
+    text-align: center;
+    width: 40px;
 }
-.drag-handle-cell:hover svg { color: var(--ui-header); }
+.grip-icon {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+.drag-handle-cell:hover { color: var(--ui-header); }
 
-/* --- Details/Expanded Row --- */
+/* --- Details/Expanded Row (Kept exactly as you had it) --- */
 .details-row > td { padding: 0; border: none; }
 
 .details-panel {
@@ -159,4 +179,6 @@
     padding: 8px 16px;
     border-radius: 4px;
     cursor: pointer;
+    display: flex;
+    align-items: center;
 }

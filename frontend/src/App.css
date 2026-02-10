@@ -9,9 +9,200 @@
 @import './styles/forms.css';
 @import './styles/modals.css';
 @import './styles/markdown.css';
+@import './styles/settings.css'; /* For the settings page */
 
 /* 3. Page/Feature Specifics */
 @import './styles/table.css';
 @import './styles/library.css';
 @import './styles/series-detail.css';
 @import './styles/about.css';
+@import './styles/tags.css';
+
+
+/* --- SIDEBAR LAYOUT --- */
+
+#App {
+    /* Change main container to Row direction */
+    display: flex;
+    flex-direction: row;
+    height: 100vh;
+    overflow: hidden; /* Prevent body scroll */
+}
+
+/* The Crimson Sidebar */
+.app-sidebar {
+    width: 240px;
+    background: var(--ui-header); /* Reusing your Crimson */
+    color: white;
+    display: flex;
+    flex-direction: column;
+    padding: 20px;
+    box-shadow: 4px 0 10px rgba(0,0,0,0.2);
+    z-index: 10;
+}
+
+.sidebar-logo {
+    font-size: 1.4rem;
+    font-weight: bold;
+    margin-bottom: 40px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    color: white;
+}
+
+/* Sidebar Navigation Buttons */
+.sidebar-nav {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    flex-grow: 1; /* Pushes bottom items down */
+}
+
+.nav-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 15px;
+    color: rgba(255, 255, 255, 0.7);
+    text-align: left;
+    background: transparent;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 1rem;
+    transition: all 0.2s ease;
+}
+
+.nav-item:hover {
+    background: rgba(255, 255, 255, 0.1);
+    color: white;
+    padding-left: 20px; /* satisfying slide effect */
+}
+
+.nav-item.active {
+    background: white;
+    color: var(--ui-header); /* Crimson text on white */
+    font-weight: bold;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+}
+
+/* Special Add Button styling */
+.nav-item.add-btn {
+    border: 2px dashed rgba(255,255,255,0.3);
+    margin-top: 20px;
+}
+.nav-item.add-btn:hover {
+    border-color: white;
+    background: rgba(255,255,255,0.1);
+}
+
+/* Adjust Content Wrapper to scroll independently */
+.content-wrapper {
+    flex-grow: 1;
+    height: 100vh;
+    overflow-y: auto; /* Content scrolls, sidebar stays fixed */
+    background: white;
+    padding: 0; /* Let children handle padding */
+}
+
+
+
+
+/* --- LIST ACTION BAR --- */
+.list-action-bar {
+    display: flex;
+    /* CHANGE: spread them out to opposite sides */
+    justify-content: space-between; 
+    align-items: center;
+    /* Match the table padding */
+    padding: 20px 0px; 
+    margin-bottom: 10px;
+}
+
+/* The New Rectangular Add Button */
+.action-rect-btn {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background-color: var(--ui-header); /* Crimson */
+    color: white;
+    border: none;
+    border-radius: 6px; 
+    padding: 10px 20px;
+    font-size: 0.95rem;
+    font-weight: bold;
+    cursor: pointer;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+    transition: background-color 0.2s, transform 0.2s;
+}
+
+.action-rect-btn:hover {
+    background-color: #a0153e; /* Darker Crimson */
+    transform: translateY(-2px);
+}
+
+/* Search Bar Styling */
+.search-bar-wrapper {
+    display: flex;
+    align-items: center;
+    position: relative;
+    width: 350px;
+}
+
+.search-bar-wrapper input {
+    width: 100%;
+    /* Extra padding on right for the icon button */
+    padding: 10px 50px 10px 15px; 
+    border-radius: 25px; 
+    border: 2px solid #ddd;
+    outline: none;
+    font-size: 0.95em;
+    transition: border-color 0.2s;
+}
+
+.search-bar-wrapper input:focus {
+    border-color: var(--ui-header);
+}
+
+.search-icon-btn {
+    position: absolute;
+    right: 5px;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 36px;
+    height: 36px;
+    background: var(--ui-header);
+    border: none;
+    border-radius: 50%;
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: background 0.2s;
+}
+
+.search-icon-btn:hover {
+    background: #a0153e;
+}
+
+.list-action-bar {
+    display: flex;
+    justify-content: space-between; /* This pushes them apart */
+    align-items: center;
+    
+    /* NEW: Force the bar to stretch the full width of the parent */
+    width: 100%; 
+    box-sizing: border-box; /* Ensures padding doesn't break the 100% width */
+    
+    margin-bottom: 10px;
+}
+
+/* Ensure the parent container also spans full width */
+.main-content {
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+}
+

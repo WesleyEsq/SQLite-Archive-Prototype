@@ -78,7 +78,7 @@
     overflow-y: auto;
 }
 /* Markdown overrides for Hero */
-.hero-description h1, .hero-description h2 { margin-top: 0; color: #ffd700; border: none; }
+.hero-description h1, .hero-description h2 { margin-top: 0; color: var(--bg-color); border: none; }
 .hero-description p { margin-bottom: 10px; }
 
 /* --- Collections Section --- */
@@ -182,4 +182,64 @@
     0% { opacity: 0.6; }
     50% { opacity: 1; }
     100% { opacity: 0.6; }
+}
+
+/* --- Updated Action Buttons --- */
+.track-action-btn {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 12px;
+    border-radius: 4px;
+    border: none;
+    font-weight: 600;
+    font-size: 0.85em;
+    cursor: pointer;
+    transition: all 0.2s;
+    background: transparent;
+    color: #666;
+}
+
+.track-action-btn:hover {
+    background-color: #f0f0f0;
+    color: #333;
+}
+
+/* Specific Colors */
+.track-action-btn.play { color: var(--ui-header); background-color: rgba(201, 24, 74, 0.1); }
+.track-action-btn.play:hover { background-color: var(--ui-header); color: white; }
+
+.track-action-btn.download:hover { color: #2980b9; background-color: #ebf5fb; }
+.track-action-btn.delete:hover { color: #c0392b; background-color: #fadbd8; }
+
+/* --- Drag Handle --- */
+.track-drag-handle {
+    display: flex;
+    align-items: center;
+    padding: 0 10px;
+    cursor: grab;
+    opacity: 0.5;
+}
+.track-drag-handle:hover { opacity: 1; }
+
+/* --- Upload Row --- */
+.asset-upload-row {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    padding: 15px;
+    margin-top: 10px;
+    border: 2px dashed #ddd;
+    border-radius: 6px;
+    color: #888;
+    font-weight: bold;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.asset-upload-row:hover {
+    border-color: var(--ui-header);
+    color: var(--ui-header);
+    background-color: #fff0f5;
 }

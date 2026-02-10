@@ -1,0 +1,198 @@
+/* frontend/src/styles/settings.css */
+
+/* The Modal Container */
+.settings-modal-wrapper {
+    width: 900px;
+    height: 700px;
+    background: white;
+    display: flex;
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 0 20px 50px rgba(0,0,0,0.5);
+}
+
+/* --- LEFT SIDEBAR (Light Gray Theme) --- */
+.settings-sidebar {
+    width: 250px;
+    background: #f4f4f4; /* Light Gray */
+    color: #333; /* Dark text for contrast */
+    display: flex;
+    flex-direction: column;
+    padding: 20px 0;
+    border-right: 1px solid #ddd; /* Separator line */
+}
+
+.settings-sidebar-header {
+    padding: 0 20px 20px 20px;
+    font-size: 1.2em;
+    font-weight: bold;
+    border-bottom: 1px solid #ddd; /* Softer border */
+    margin-bottom: 10px;
+    color: var(--ui-header); /* Raspberry */
+}
+
+.settings-nav-item {
+    padding: 12px 20px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    font-size: 0.95em;
+    color: #555; /* Dark gray for inactive items */
+    font-weight: 500;
+}
+
+.settings-nav-item:hover {
+    background: rgba(0,0,0,0.05); /* Slight darken on hover */
+    color: #000;
+    padding-left: 25px; /* Slide effect */
+}
+
+.settings-nav-item.active {
+    background: var(--ui-header);
+    color: white;
+    font-weight: bold;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+}
+
+/* --- RIGHT CONTENT AREA --- */
+.settings-content {
+    flex-grow: 1;
+    display: flex;
+    flex-direction: column;
+    background: white; /* Clean white background */
+    position: relative;
+}
+
+.settings-header-bar {
+    height: 60px;
+    background: white;
+    border-bottom: 1px solid #eee;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 30px;
+}
+
+.settings-title {
+    font-size: 1.2em;
+    font-weight: bold;
+    color: #333;
+}
+
+.settings-close-btn {
+    font-size: 2em;
+    background: none;
+    border: none;
+    cursor: pointer;
+    line-height: 1;
+    color: #ccc;
+    transition: color 0.2s;
+}
+.settings-close-btn:hover { color: var(--ui-header); }
+
+/* The Scrollable Area for the actual form */
+.settings-page-scroll {
+    flex-grow: 1;
+    padding: 30px;
+    overflow-y: auto;
+    background-color: #fcfcfc; /* Very subtle difference to separate from header */
+}
+
+/* --- GENERIC FORM STYLES FOR PAGES --- */
+.setting-section {
+    background: white;
+    padding: 25px;
+    border-radius: 8px;
+    border: 1px solid #eee;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.03);
+    margin-bottom: 20px;
+}
+
+.setting-label {
+    font-weight: 700;
+    margin-bottom: 8px;
+    display: block;
+    color: #333;
+    font-size: 0.95em;
+}
+
+.setting-desc {
+    font-size: 0.9em;
+    color: #666;
+    margin-bottom: 15px;
+    line-height: 1.4;
+}
+
+/* --- The "Add New Tag" Button --- */
+.add-tag-btn-full {
+    width: 100%;
+    padding: 15px;
+    margin-bottom: 20px; /* Give it space from the list */
+    
+    /* The "Nice" Look: Dashed border + Soft Pink Background */
+    background-color: #FFF0F5; /* Very light pink (Lavender Blush) */
+    border: 2px dashed var(--ui-header); /* Crimson dashed border */
+    color: var(--ui-header);
+    
+    border-radius: 8px;
+    font-size: 1rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+}
+
+.add-tag-btn-full:hover {
+    background-color: #ffe5e9; /* Slightly darker pink on hover */
+    transform: translateY(-2px); /* Subtle lift effect */
+    box-shadow: 0 4px 8px rgba(201, 24, 74, 0.15); /* Soft crimson shadow */
+}
+
+.add-tag-btn-full:active {
+    transform: translateY(0);
+}
+
+/* --- Mini Action Buttons (Tag Manager) --- */
+
+/* Shared Base Style */
+.edit-mini-btn,
+.delete-mini-btn {
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    padding: 6px;
+    border-radius: 4px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s ease;
+}
+
+/* 1. Edit Button (Pencil) */
+.edit-mini-btn {
+    color: #888; /* Subtle gray default */
+}
+
+.edit-mini-btn:hover {
+    background-color: #E3F2FD; /* Light Blue background */
+    color: #1976D2;            /* Deep Blue icon */
+    transform: scale(1.1);
+}
+
+/* 2. Delete Button (The '×' or Trash icon) */
+.delete-mini-btn {
+    color: #aaa;
+    font-size: 1.2rem; /* Make the '×' slightly larger/easier to click */
+    line-height: 1;    /* Fix vertical alignment for text characters */
+}
+
+.delete-mini-btn:hover {
+    background-color: #FFEBEE; /* Light Red background */
+    color: #D32F2F;            /* Deep Red icon */
+    transform: scale(1.1);
+}

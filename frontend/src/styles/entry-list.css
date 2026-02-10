@@ -1,0 +1,25 @@
+/* --- Floating Action Button (FAB) --- */
+.fab-btn {
+    position: fixed;
+    bottom: 30px;
+    right: 30px;
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    background: var(--ui-header);
+    color: white;
+    border: none;
+    font-size: 2rem;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 90; /* Above list, below modals */
+    transition: transform 0.2s, background 0.2s;
+}
+
+.fab-btn:hover {
+    transform: scale(1.1) rotate(90deg); /* Playful spin */
+    background: #c9184a;
+}

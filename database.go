@@ -20,26 +20,35 @@ func InitDB(path string) (*DB, error) {
 		return nil, err
 	}
 
-	// IMPORTANT: Enable Foreign Keys for Cascade Delete to work!
+	// IMPORTANT:
 	if _, err := db.Exec("PRAGMA foreign_keys = ON"); err != nil {
 		return nil, fmt.Errorf("failed to enable foreign keys: %w", err)
 	}
 
-	// Initialize standard tables
+	// Initialize standard tables.
 	if err := createTables(db); err != nil {
 		return nil, err
 	}
 
-	// Initialize NEW media tables (defined in media.go)
+	// Media table (contains about multimedia blobs)
 	if err := CreateMediaTables(db); err != nil {
 		return nil, err
 	}
 
-	// Apply patches...
+	// Yeah I know scalability haha, look at this
 	if err := patchSchema(db); err != nil {
 		return nil, err
 	}
 
+	// Tags table
+	if err := CreateTagTables(db); err != nil {
+		return nil, err
+	}
+
+	// Set WAL mode for better concurrency and performance
+	if _, err := db.Exec("PRAGMA journal_mode=WAL;"); err != nil {
+		return nil, err
+	}
 	return &DB{conn: db}, nil
 }
 

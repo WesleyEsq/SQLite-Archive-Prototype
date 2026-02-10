@@ -1,108 +1,58 @@
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import { DragDropContext, Droppable, Draggable } from '@hello-pangea/dnd';
 import ReactMarkdown from 'react-markdown';
-import { GetEntries, UpdateOrder, DeleteEntry, SaveEntry, GetEntryImage, DownloadBackup, ImportLegacyCSV } from '../../wailsjs/go/main/App';
+import { DownloadBackup, ImportLegacyCSV } from '../../wailsjs/go/main/App';
+import { useEntryList } from '../hooks/useEntryList'; // <--- The new Hook
+import TagSelectorModal from './TagSelectorModal';   // <--- The Modal we made
+import { renderIcon } from '../utils/iconMap';       // <--- Icon helper
 
-const BLANK_IMAGE_BASE64 = "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII=";
+// Icons
+import { Plus, Search, FileDown, Upload, GripVertical, Pencil, Trash2, X, Check } from 'lucide-react';
 
-export default function EntryList({ isAddingNew, onAddComplete, refreshTrigger }) {
-    const [entries, setEntries] = useState([]);
-    const [editingId, setEditingId] = useState(null);
-    const [editForm, setEditForm] = useState({});
-    const [expandedRowId, setExpandedRowId] = useState(null);
-    const [searchQuery, setSearchQuery] = useState("");
+export default function EntryList({ isAddingNew, onAddComplete, refreshTrigger, onAddNew }) {
+    // 1. Initialize Controller
+    const {
+        entries, editingId, editForm, expandedRowId, searchQuery, 
+        entryTags, tagModalTarget, BLANK_IMAGE_BASE64,
+        setSearchQuery, setTagModalTarget,
+        refreshEntries, handleSearchKeyDown, startEditing, cancelEditing, saveEdit, 
+        handleDelete, handleDragEnd, handleRowClick, refreshTags,
+        handleChange, handleAlignment, handleImageFile, handleBackupFile
+    } = useEntryList(isAddingNew, onAddComplete, refreshTrigger);
 
-    useEffect(() => { refreshEntries(); }, [refreshTrigger]);
+    // --- RENDER HELPERS ---
 
-    useEffect(() => {
-        if (isAddingNew) {
-            const nextNum = entries.length > 0 ? String(entries.length + 1) : "1";
-            startEditing({ 
-                id: 'NEW', number: nextNum, title: '', comment: '', rank: '', 
-                description: '', image: BLANK_IMAGE_BASE64, textAlignment: 'center' 
-            });
-        }
-    }, [isAddingNew]);
+    // 1. Tiny Tag Display (Visible in Expanded Row)
+    const renderTagList = (entryId) => {
+        const tags = entryTags[entryId] || [];
+        const displayLimit = 5;
+        const visibleTags = tags.slice(0, displayLimit);
+        const remaining = tags.length - displayLimit;
 
-    const refreshEntries = () => {
-        GetEntries(searchQuery).then(res => setEntries(res || [])).catch(console.error);
+        return (
+            <div className="tag-row-display">
+                {visibleTags.map(tag => (
+                    <span key={tag.id} className="mini-tag-pill" title={tag.description}>
+                        {renderIcon(tag.icon, { size: 12, style: {marginRight: 4} })}
+                        {tag.name}
+                    </span>
+                ))}
+                
+                {remaining > 0 && (
+                    <span className="mini-tag-pill more">+{remaining} more</span>
+                )}
+
+                <button 
+                    className="add-tag-tiny-btn" 
+                    onClick={(e) => { e.stopPropagation(); setTagModalTarget(entryId); }}
+                >
+                    + Tag
+                </button>
+            </div>
+        );
     };
 
-    const handleSearchKeyDown = (e) => { if (e.key === 'Enter') refreshEntries(); };
-
-    // --- Editors & Handlers ---
-    const startEditing = async (entry) => {
-        let fullEntry = { ...entry };
-        if (entry.id !== 'NEW' && (!entry.image || entry.image === BLANK_IMAGE_BASE64)) {
-            const img = await GetEntryImage(entry.id);
-            if (img) fullEntry.image = img;
-        }
-        if (!fullEntry.textAlignment) fullEntry.textAlignment = 'center';
-
-        setEditingId(entry.id);
-        setEditForm(fullEntry);
-        setExpandedRowId(entry.id);
-    };
-
-    const cancelEditing = () => {
-        setEditingId(null); setEditForm({});
-        if (isAddingNew) onAddComplete();
-    };
-
-    const saveEdit = () => {
-        const payload = { ...editForm, id: editForm.id === 'NEW' ? 0 : editForm.id };
-        SaveEntry(payload).then(() => {
-            refreshEntries(); setEditingId(null);
-            if (isAddingNew) onAddComplete();
-        }).catch(err => alert(err));
-    };
-
-    const handleChange = (e) => setEditForm({ ...editForm, [e.target.name]: e.target.value });
-    const handleAlignment = (align) => setEditForm({ ...editForm, textAlignment: align });
-
-    const handleImageFile = (e) => {
-        const file = e.target.files[0];
-        if (!file) return;
-        const reader = new FileReader();
-        reader.onload = (ev) => setEditForm({ ...editForm, image: ev.target.result.split(',')[1] });
-        reader.readAsDataURL(file);
-    };
-
-    const handleBackupFile = (e) => {
-        const file = e.target.files[0];
-        if (!file) return;
-        const reader = new FileReader();
-        reader.onload = (ev) => setEditForm({ ...editForm, backup: ev.target.result.split(',')[1], backupName: file.name });
-        reader.readAsDataURL(file);
-    };
-
-    const handleDelete = (id) => { if (window.confirm("Delete this entry?")) DeleteEntry(id).then(refreshEntries); };
-
-    const handleDragEnd = (result) => {
-        if (!result.destination || editingId || searchQuery !== "") return;
-        const items = Array.from(entries);
-        const [reorderedItem] = items.splice(result.source.index, 1);
-        items.splice(result.destination.index, 0, reorderedItem);
-        const updated = items.map((item, idx) => ({ ...item, number: String(idx + 1) }));
-        setEntries(updated);
-        UpdateOrder(updated).catch(alert);
-    };
-
-    const handleRowClick = async (id) => {
-        if (editingId) return;
-        const isExpanding = expandedRowId !== id;
-        setExpandedRowId(isExpanding ? id : null);
-        if (isExpanding) {
-            const entry = entries.find(e => e.id === id);
-            if (entry && (!entry.image || entry.image === BLANK_IMAGE_BASE64)) {
-                const img = await GetEntryImage(id);
-                if (img) setEntries(prev => prev.map(e => e.id === id ? { ...e, image: img } : e));
-            }
-        }
-    };
-
-    // --- Render Helpers ---
-    // THE KEY FIX: Returning inputs (td > input) instead of divs
+    // 2. Edit Mode Row Inputs
     const renderEditInputs = () => (
         <>
             <td><input name="number" className="inline-input" value={editForm.number} onChange={handleChange} style={{width: '50px'}}/></td>
@@ -110,26 +60,35 @@ export default function EntryList({ isAddingNew, onAddComplete, refreshTrigger }
             <td><input name="comment" className="inline-input" value={editForm.comment} onChange={handleChange} /></td>
             <td><input name="rank" className="inline-input" value={editForm.rank} onChange={handleChange} style={{width: '60px'}}/></td>
             <td className="actions-cell">
-                <button className="save-btn" onClick={(e) => { e.stopPropagation(); saveEdit(); }}>Save</button>
-                <button className="cancel-btn" onClick={(e) => { e.stopPropagation(); cancelEditing(); }}>Cancel</button>
+                <button className="icon-action-btn save" onClick={(e) => { e.stopPropagation(); saveEdit(); }} title="Save">
+                    <Check size={18} />
+                </button>
+                <button className="icon-action-btn cancel" onClick={(e) => { e.stopPropagation(); cancelEditing(); }} title="Cancel">
+                    <X size={18} />
+                </button>
             </td>
         </>
     );
 
+    // 3. View Mode Row Text
     const renderViewText = (entry) => (
         <>
-            <td>{entry.number}</td>
-            <td>{entry.title}</td>
-            <td>{entry.comment}</td>
-            <td>{entry.rank}</td>
+            <td className="rank-col">{entry.number}</td>
+            <td className="title-col">{entry.title}</td>
+            <td className="comment-col">{entry.comment}</td>
+            <td className="rank-text">{entry.rank}</td>
             <td className="actions-cell">
-                <button onClick={(e) => { e.stopPropagation(); startEditing(entry); }}>Edit</button>
-                <button className="delete-button" onClick={(e) => { e.stopPropagation(); handleDelete(entry.id); }}>Delete</button>
+                <button className="icon-action-btn edit" onClick={(e) => { e.stopPropagation(); startEditing(entry); }} title="Edit">
+                    <Pencil size={18} />
+                </button>
+                <button className="icon-action-btn delete" onClick={(e) => { e.stopPropagation(); handleDelete(entry.id); }} title="Delete">
+                    <Trash2 size={18} />
+                </button>
             </td>
         </>
     );
 
-    // The expanded panel in edit mode (textarea + uploads)
+    // 4. The Expanded Panel (Edit Mode)
     const renderEditDetailsPanel = () => (
         <div className="details-panel edit-mode">
             <div className="edit-image-section">
@@ -165,79 +124,120 @@ export default function EntryList({ isAddingNew, onAddComplete, refreshTrigger }
 
     return (
         <div className="main-content">
-            <div className="search-container">
-                <div className="search-input-wrapper">
-                    <input type="text" placeholder="Search titles or comments..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} onKeyDown={handleSearchKeyDown} />
-                    <button onClick={refreshEntries} title="Search">🔍</button>
-                </div>
-            </div>
+            <div className="entry-card">
+                <div className="list-action-bar">
+                    <button className="action-rect-btn" onClick={onAddNew}>
+                        <Plus size={18} />
+                        <span>Add Entry</span>
+                    </button>
 
-            {(entries.length > 0 || isAddingNew) ? (
-                <DragDropContext onDragEnd={handleDragEnd}>
-                    <table className="compendium-table">
-                        <thead>
-                            <tr>
-                                <th style={{width: '40px'}}></th>
-                                <th style={{width: '60px'}}>#</th>
-                                <th>Title</th>
-                                <th>Comment</th>
-                                <th style={{width: '80px'}}>Rank</th>
-                                <th style={{width: '140px'}}>Actions</th>
-                            </tr>
-                        </thead>
-                        <Droppable droppableId="entries">
-                            {(provided) => (
-                                <tbody {...provided.droppableProps} ref={provided.innerRef}>
-                                    {isAddingNew && editingId === 'NEW' && (
-                                        <>
-                                            <tr className="editing-row"><td className="drag-handle-cell">✨</td>{renderEditInputs()}</tr>
-                                            <tr className="details-row editing-details"><td colSpan="6">{renderEditDetailsPanel()}</td></tr>
-                                        </>
-                                    )}
-                                    {entries.map((entry, index) => (
-                                        <React.Fragment key={entry.id}>
-                                            <Draggable draggableId={String(entry.id)} index={index} isDragDisabled={!!editingId || searchQuery !== ""}>
-                                                {(provided, snapshot) => (
-                                                    <tr ref={provided.innerRef} {...provided.draggableProps} className={`${snapshot.isDragging ? 'dragging-row' : ''} ${editingId === entry.id ? 'editing-row' : ''}`} onClick={() => handleRowClick(entry.id)}>
-                                                        <td className="drag-handle-cell" {...provided.dragHandleProps}>
-                                                            {editingId !== entry.id && searchQuery === "" && (
-                                                                <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor"><path d="M14 6v12h-4v-12h4zm-6 0v12h-4v-12h4zm10 0v12h-4v-12h4z" /></svg>
+                    <div className="search-bar-wrapper">
+                        <input 
+                            type="text" 
+                            placeholder="Search titles or comments..." 
+                            value={searchQuery} 
+                            onChange={(e) => setSearchQuery(e.target.value)} 
+                            onKeyDown={handleSearchKeyDown} 
+                        />
+                        <button className="search-icon-btn" onClick={refreshEntries} title="Search">
+                            <Search size={18} />
+                        </button>
+                    </div>
+                </div>
+
+                {(entries.length > 0 || isAddingNew) ? (
+                    <DragDropContext onDragEnd={handleDragEnd}>
+                        <table className="compendium-table">
+                            <thead>
+                                <tr>
+                                    <th style={{width: '40px'}}></th>
+                                    <th style={{width: '60px'}}>#</th>
+                                    <th>Title</th>
+                                    <th>Comment</th>
+                                    <th style={{width: '80px'}}>Rank</th>
+                                    <th style={{width: '100px', textAlign: 'right'}}>Actions</th>
+                                </tr>
+                            </thead>
+                            <Droppable droppableId="entries">
+                                {(provided) => (
+                                    <tbody {...provided.droppableProps} ref={provided.innerRef}>
+                                        {isAddingNew && editingId === 'NEW' && (
+                                            <>
+                                                <tr className="editing-row"><td className="drag-handle-cell">✨</td>{renderEditInputs()}</tr>
+                                                <tr className="details-row editing-details"><td colSpan="6">{renderEditDetailsPanel()}</td></tr>
+                                            </>
+                                        )}
+                                        {entries.map((entry, index) => (
+                                            <React.Fragment key={entry.id}>
+                                                <Draggable draggableId={String(entry.id)} index={index} isDragDisabled={!!editingId || searchQuery !== ""}>
+                                                    {(provided, snapshot) => (
+                                                        <tr ref={provided.innerRef} {...provided.draggableProps} className={`${snapshot.isDragging ? 'dragging-row' : ''} ${editingId === entry.id ? 'editing-row' : ''}`} onClick={() => handleRowClick(entry.id)}>
+                                                            <td className="drag-handle-cell" {...provided.dragHandleProps}>
+                                                                {editingId !== entry.id && searchQuery === "" && (
+                                                                    <div className="grip-icon"><GripVertical size={20} /></div>
+                                                                )}
+                                                            </td>
+                                                            {editingId === entry.id ? renderEditInputs() : renderViewText(entry)}
+                                                        </tr>
+                                                    )}
+                                                </Draggable>
+                                                
+                                                {/* EXPANDED DETAILS ROW */}
+                                                {expandedRowId === entry.id && (
+                                                    <tr className="details-row">
+                                                        <td colSpan="6">
+                                                            {editingId === entry.id ? renderEditDetailsPanel() : (
+                                                                <div className="details-panel">
+                                                                    <img src={`data:image/jpeg;base64,${entry.image || BLANK_IMAGE_BASE64}`} className="details-image" alt="Cover" />
+                                                                    
+                                                                    <div className="details-text">
+                                                                        {/* --- TAG DISPLAY --- */}
+                                                                        {renderTagList(entry.id)}
+                                                                        
+                                                                        <div className="markdown-content" style={{ textAlign: entry.textAlignment || 'center', marginTop: '15px' }}>
+                                                                            <ReactMarkdown>{entry.description || "No description."}</ReactMarkdown>
+                                                                        </div>
+                                                                        
+                                                                        {entry.backupName && (
+                                                                            <button className="download-button" onClick={() => DownloadBackup(entry.id)}>
+                                                                                <FileDown size={16} style={{marginRight: '5px'}}/> 
+                                                                                Download {entry.backupName}
+                                                                            </button>
+                                                                        )}
+                                                                    </div>
+                                                                </div>
                                                             )}
                                                         </td>
-                                                        {editingId === entry.id ? renderEditInputs() : renderViewText(entry)}
                                                     </tr>
                                                 )}
-                                            </Draggable>
-                                            {expandedRowId === entry.id && (
-                                                <tr className="details-row">
-                                                    <td colSpan="6">
-                                                        {editingId === entry.id ? renderEditDetailsPanel() : (
-                                                            <div className="details-panel">
-                                                                <img src={`data:image/jpeg;base64,${entry.image || BLANK_IMAGE_BASE64}`} className="details-image" />
-                                                                <div className="details-text">
-                                                                    <div className="markdown-content" style={{ textAlign: entry.textAlignment || 'center' }}>
-                                                                        <ReactMarkdown>{entry.description || "No description."}</ReactMarkdown>
-                                                                    </div>
-                                                                    {entry.backupName && <button className="download-button" onClick={() => DownloadBackup(entry.id)}>Download {entry.backupName}</button>}
-                                                                </div>
-                                                            </div>
-                                                        )}
-                                                    </td>
-                                                </tr>
-                                            )}
-                                        </React.Fragment>
-                                    ))}
-                                    {provided.placeholder}
-                                </tbody>
-                            )}
-                        </Droppable>
-                    </table>
-                </DragDropContext>
-            ) : (
-                <div className="empty-db-prompt">
-                    {searchQuery ? <h3>No matches found.</h3> : <h3>Compendium is empty.</h3>}
-                    {!searchQuery && <button className="import-button" onClick={ImportLegacyCSV}>Import CSV</button>}
-                </div>
+                                            </React.Fragment>
+                                        ))}
+                                        {provided.placeholder}
+                                    </tbody>
+                                )}
+                            </Droppable>
+                        </table>
+                    </DragDropContext>
+                ) : (
+                    <div className="empty-db-prompt">
+                        {searchQuery ? <h3>No matches found.</h3> : <h3>Compendium is empty.</h3>}
+                        {!searchQuery && (
+                            <button className="import-button" onClick={ImportLegacyCSV}>
+                                <Upload size={18} style={{marginRight: '8px'}} /> Import CSV
+                            </button>
+                        )}
+                    </div>
+                )}
+            </div>
+
+            {/* --- TAG SELECTOR MODAL --- */}
+            {tagModalTarget && (
+                <TagSelectorModal 
+                    entryId={tagModalTarget}
+                    currentTags={entryTags[tagModalTarget] || []}
+                    onClose={() => setTagModalTarget(null)}
+                    onSave={() => refreshTags(tagModalTarget)}
+                />
             )}
         </div>
     );

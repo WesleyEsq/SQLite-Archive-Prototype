@@ -39,8 +39,10 @@ type App struct {
 }
 
 // NewApp creates a new App application struct
-func NewApp() *App {
-	return &App{}
+func NewApp(db *DB) *App {
+	return &App{
+		db: db, // The database is injected here!
+	}
 }
 
 // Startup is called when the app starts.
@@ -248,4 +250,36 @@ func (a *App) ExportMediaAsset(assetID int, filename string) error {
 // UpdateAssetOrder updates the sort order of a list of assets
 func (a *App) UpdateAssetOrder(assets []MediaAsset) error {
 	return a.db.UpdateAssetOrder(assets)
+}
+
+func (a *App) CreateTag(name, description, icon string) error {
+	return a.db.CreateTag(name, description, icon)
+}
+
+func (a *App) GetAllTags() ([]Tag, error) {
+	return a.db.GetAllTags()
+}
+
+func (a *App) GetTagsForEntry(entryID int) ([]Tag, error) {
+	return a.db.GetTagsForEntry(entryID)
+}
+
+func (a *App) AddTagToEntry(entryID, tagID int) error {
+	return a.db.AddTagToEntry(entryID, tagID)
+}
+
+func (a *App) RemoveTagFromEntry(entryID, tagID int) error {
+	return a.db.RemoveTagFromEntry(entryID, tagID)
+}
+
+func (a *App) DeleteTag(tagID int) error {
+	return a.db.DeleteTag(tagID)
+}
+
+func (a *App) UpdateTag(id int, name, description, icon string) error {
+	return a.db.UpdateTag(id, name, description, icon)
+}
+
+func (a *App) UpdateEntryTags(entryID int, tagIDs []int) error {
+	return a.db.UpdateEntryTags(entryID, tagIDs)
 }

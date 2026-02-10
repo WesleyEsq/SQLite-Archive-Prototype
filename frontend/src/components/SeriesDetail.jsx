@@ -1,11 +1,18 @@
 import React from 'react';
 import ReactMarkdown from 'react-markdown'; 
 import { DragDropContext, Droppable, Draggable } from '@hello-pangea/dnd';
-import { useSeriesDetail } from '../hooks/useSeriesDetail'; // <--- Import the Controller
+import { useSeriesDetail } from '../hooks/useSeriesDetail';
 
+// Viewer Components
 import MediaPlayer from './MediaPlayer';
 import PDFViewer from './PDFViewer';
 import EpubViewer from './EpubViewer';
+
+// Icons
+import { 
+    ArrowLeft, Tv, BookOpen, FileText, Film, File, 
+    PlayCircle, Eye, Download, Trash2, Plus, GripVertical, X 
+} from 'lucide-react';
 
 export default function SeriesDetail({ entry, onBack }) {
     // 1. Initialize the Controller
@@ -19,15 +26,33 @@ export default function SeriesDetail({ entry, onBack }) {
         <div className="series-detail-container">
             {/* --- HERO SECTION --- */}
             <div className="series-hero">
-                <button className="back-button-floating" onClick={onBack}>← Back</button>
+                <button className="back-button-floating" onClick={onBack}>
+                    <ArrowLeft size={20} /> Back
+                </button>
+                
                 <div className="hero-content">
-                    <img src={`data:image/jpeg;base64,${entry.image}`} className="hero-poster" alt="Poster" />
+                    {/* FIXED IMAGE SOURCE: Now using the high-speed handler */}
+                    <img 
+                        src={`/images/${entry.id}`} 
+                        className="hero-poster" 
+                        alt={entry.title} 
+                        onError={(e) => e.target.style.display = 'none'} // Hide if broken
+                    />
+                    
                     <div className="hero-info">
                         <h1 className="hero-title">{entry.title}</h1>
+                        
                         <div className="hero-meta-row">
-                            <span className={`rank-badge rank-${entry.rank.charAt(0)}`}>Rank {entry.rank}</span>
-                            <span className="meta-pill">Ordered as #{entry.number}</span>
+                            <span className={`rank-badge rank-${entry.rank.charAt(0)}`}>
+                                {entry.rank}
+                            </span>
+                            <span className="meta-pill">#{entry.number}</span>
+                            {/* Dynamic Icon based on content type guess */}
+                            <span className="meta-icon">
+                                {groups.some(g => g.title.toLowerCase().includes('season')) ? <Tv size={16}/> : <BookOpen size={24}/>}
+                            </span>
                         </div>
+                        
                         <div className="hero-description markdown-content" style={{ textAlign: entry.textAlignment || 'left' }}>
                             <ReactMarkdown>{entry.description || "*No description provided.*"}</ReactMarkdown>
                         </div>
@@ -37,10 +62,12 @@ export default function SeriesDetail({ entry, onBack }) {
 
             <div className="content-separator">
                 <h2>Media Collections</h2>
-                <button className="add-collection-btn" onClick={handleCreateGroup}>+ New Collection</button>
+                <button className="add-collection-btn" onClick={handleCreateGroup}>
+                    <Plus size={18} /> New Collection
+                </button>
             </div>
 
-            {/* --- DRAG CONTEXT --- */}
+            {/* --- COLLECTIONS & ASSETS --- */}
             <DragDropContext onDragEnd={handleDragEnd}>
                 <div className="collections-grid">
                     {groups.length === 0 && (
@@ -51,10 +78,11 @@ export default function SeriesDetail({ entry, onBack }) {
 
                     {groups.map(group => (
                         <div key={group.id} className={`collection-card ${expandedGroupId === group.id ? 'expanded' : ''}`}>
+                            {/* GROUP HEADER */}
                             <div className="collection-header" onClick={() => toggleGroup(group.id)}>
                                 <div className="collection-title-wrapper">
                                     <span className="collection-icon">
-                                        {group.title.toLowerCase().includes('season') ? '📺' : '📖'}
+                                        {group.title.toLowerCase().includes('season') ? <Tv size={20} /> : <BookOpen size={20} />}
                                     </span>
                                     <h3>{group.title}</h3>
                                 </div>
@@ -67,11 +95,12 @@ export default function SeriesDetail({ entry, onBack }) {
                                         onClick={(e) => { e.stopPropagation(); handleDeleteGroup(group.id); }}
                                         title="Delete Collection"
                                     >
-                                        ×
+                                        <X size={18} />
                                     </button>
                                 </div>
                             </div>
 
+                            {/* EXPANDED CONTENT (ASSET LIST) */}
                             {expandedGroupId === group.id && (
                                 <Droppable droppableId={`group-${group.id}`} type={`group-${group.id}`}>
                                     {(provided) => (
@@ -89,49 +118,63 @@ export default function SeriesDetail({ entry, onBack }) {
                                                             {...provided.draggableProps}
                                                             style={provided.draggableProps.style}
                                                         >
+                                                            {/* DRAG HANDLE */}
                                                             <div 
-                                                                className="track-index"
+                                                                className="track-drag-handle"
                                                                 {...provided.dragHandleProps}
-                                                                title="Drag to reorder"
-                                                                style={{ cursor: 'grab' }}
+                                                                title="Reorder"
                                                             >
-                                                                {index + 1}
+                                                                <GripVertical size={16} color="#ccc" />
                                                             </div>
 
+                                                            {/* INDEX */}
+                                                            <div className="track-index">{index + 1}</div>
+
+                                                            {/* FILE ICON */}
                                                             <div className="track-icon">
-                                                                {asset.mime_type.includes('pdf') ? '📄' : asset.mime_type.includes('video') ? '🎬' : '📁'}
+                                                                {asset.mime_type.includes('pdf') ? <FileText size={18} color="#e74c3c"/> : 
+                                                                 asset.mime_type.includes('video') ? <Film size={18} color="#3498db"/> : 
+                                                                 <File size={18} color="#95a5a6"/>}
                                                             </div>
+
+                                                            {/* INFO */}
                                                             <div className="track-info">
                                                                 <div className="track-title">{asset.title}</div>
                                                                 <div className="track-filename">{asset.filename}</div>
                                                             </div>
                                                             
+                                                            {/* ACTIONS */}
                                                             <div className="track-actions">
-                                                                {/* 1. VIEW/PLAY BUTTON */}
+                                                                {/* View/Play */}
                                                                 {(asset.mime_type.startsWith('video/') || 
                                                                   asset.mime_type === 'application/pdf' || 
                                                                   asset.mime_type === 'application/epub+zip') && (
                                                                     <button 
                                                                         className="track-action-btn play" 
                                                                         onClick={() => handleView(asset, assets[group.id], index)}
+                                                                        title={asset.mime_type.startsWith('video/') ? "Play" : "Read"}
                                                                     >
-                                                                        {asset.mime_type.startsWith('video/') ? '▶ Play' : '👁 View'}
+                                                                        {asset.mime_type.startsWith('video/') ? <PlayCircle size={18}/> : <Eye size={18}/>}
+                                                                        <span>{asset.mime_type.startsWith('video/') ? "Play" : "View"}</span>
                                                                     </button>
                                                                 )}
 
-                                                                {/* 2. DOWNLOAD BUTTON */}
+                                                                {/* Download */}
                                                                 <button 
                                                                     className="track-action-btn download"
-                                                                    onClick={() => handleDownload(asset)}>
-                                                                    Download
+                                                                    onClick={() => handleDownload(asset)}
+                                                                    title="Download"
+                                                                >
+                                                                    <Download size={18} />
                                                                 </button>
                                                                 
-                                                                {/* 3. DELETE BUTTON */}
+                                                                {/* Delete */}
                                                                 <button 
                                                                     className="track-action-btn delete"
                                                                     onClick={() => handleDeleteAsset(asset.id, group.id)}
+                                                                    title="Delete File"
                                                                 >
-                                                                    Delete
+                                                                    <Trash2 size={18} />
                                                                 </button>
                                                             </div>
                                                         </div>
@@ -140,19 +183,17 @@ export default function SeriesDetail({ entry, onBack }) {
                                             ))}
                                             {provided.placeholder}
 
-                                            {/* UPLOAD ROW */}
+                                            {/* UPLOAD AREA */}
                                             {uploadingGroupId === group.id ? (
-                                                <div className="asset-upload-row">
-                                                    <div className="upload-loading-container">
-                                                        <div className="upload-spinner"></div>
-                                                        <span className="upload-text">
-                                                            {uploadProgress || "Importing Media..."}
-                                                        </span>
-                                                    </div>
+                                                <div className="asset-upload-row loading">
+                                                    <div className="upload-spinner"></div>
+                                                    <span className="upload-text">
+                                                        {uploadProgress || "Importing Media..."}
+                                                    </span>
                                                 </div>
                                             ) : (
                                                 <label className="asset-upload-row">
-                                                    <div className="upload-icon">+</div>
+                                                    <Plus size={20} />
                                                     <span>Add Files to {group.title}</span>
                                                     <input type="file" multiple onChange={(e) => handleFileUpload(e, group.id)} hidden />
                                                 </label>
@@ -167,25 +208,9 @@ export default function SeriesDetail({ entry, onBack }) {
             </DragDropContext>
 
             {/* --- VIEWER MODALS --- */}
-            {viewerContext?.type === 'video' && (
-                <MediaPlayer 
-                    playlist={viewerContext.playlist}
-                    startIndex={viewerContext.startIndex}
-                    onClose={closeViewer} 
-                />
-            )}
-            {viewerContext?.type === 'pdf' && (
-                <PDFViewer 
-                    asset={viewerContext.asset} 
-                    onClose={closeViewer} 
-                />
-            )}
-            {viewerContext?.type === 'epub' && (
-                <EpubViewer 
-                    asset={viewerContext.asset} 
-                    onClose={closeViewer} 
-                />
-            )}
+            {viewerContext?.type === 'video' && <MediaPlayer playlist={viewerContext.playlist} startIndex={viewerContext.startIndex} onClose={closeViewer} />}
+            {viewerContext?.type === 'pdf' && <PDFViewer asset={viewerContext.asset} onClose={closeViewer} />}
+            {viewerContext?.type === 'epub' && <EpubViewer asset={viewerContext.asset} onClose={closeViewer} />}
         </div>
     );
 }

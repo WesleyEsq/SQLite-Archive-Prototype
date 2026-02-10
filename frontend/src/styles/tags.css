@@ -1,0 +1,195 @@
+/* frontend/src/styles/tags.css */
+
+.tag-manager-content {
+    display: flex;
+    flex-direction: column;
+    height: 600px;
+}
+
+.tag-list-scroll {
+    flex-grow: 1;
+    overflow-y: auto;
+    padding: 20px;
+    background: #f9f9f9;
+    border-bottom: 1px solid #eee;
+}
+
+.tag-row-item {
+    display: flex;
+    align-items: center;
+    background: white;
+    padding: 10px 15px;
+    border-radius: 8px;
+    margin-bottom: 10px;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+}
+
+.tag-icon-preview { margin-right: 15px; display: flex; align-items: center; }
+.tag-info { flex-grow: 1; display: flex; flex-direction: column; }
+.tag-name { font-weight: bold; color: #333; }
+.tag-desc { font-size: 0.8em; color: #888; }
+.tag-count-badge { font-size: 0.8em; background: #eee; padding: 2px 8px; border-radius: 10px; margin-right: 10px; }
+
+.delete-mini-btn {
+    background: none; border: none; color: #ccc; font-size: 1.5em; cursor: pointer;
+}
+.delete-mini-btn:hover { color: var(--ui-header); }
+
+/* --- Creator Form --- */
+.tag-creator-section {
+    padding: 20px;
+    background: white;
+    border-top: 1px solid #eee;
+}
+
+.add-tag-btn-full {
+    width: 100%;
+    padding: 12px;
+    background: var(--row-color-1);
+    color: var(--ui-header);
+    border: 2px dashed var(--border-color);
+    border-radius: 8px;
+    font-weight: bold;
+    cursor: pointer;
+}
+.add-tag-btn-full:hover { background: var(--row-color-2); }
+
+.tag-form { display: flex; flex-direction: column; gap: 10px; }
+.tag-form h3 { margin: 0 0 10px 0; font-size: 1em; color: var(--header-bg); }
+
+/* --- Icon Picker Grid --- */
+.icon-label { font-size: 0.9em; font-weight: bold; color: #666; margin-top: 5px; }
+.icon-picker-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(30px, 1fr));
+    gap: 8px;
+    max-height: 100px;
+    overflow-y: auto;
+    padding: 5px;
+    border: 1px solid #eee;
+    border-radius: 4px;
+}
+
+.icon-choice {
+    width: 30px; height: 30px;
+    display: flex; align-items: center; justify-content: center;
+    border-radius: 4px;
+    cursor: pointer;
+    color: #888;
+}
+.icon-choice:hover { background: #f0f0f0; color: #333; }
+.icon-choice.selected {
+    background: var(--ui-header);
+    color: white;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+}
+
+.form-actions { display: flex; gap: 10px; margin-top: 10px; }
+
+.edit-mini-btn {
+    background: none;
+    border: none;
+    color: #aaa;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 5px;
+    border-radius: 4px;
+}
+
+.edit-mini-btn:hover {
+    background: #eee;
+    color: #333;
+}
+
+/* --- Tiny Tag Display (In Entry List) --- */
+.tag-row-display {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 10px;
+}
+
+.mini-tag-pill {
+    background-color: var(--row-color-2);
+    color: var(--text-color);
+    padding: 4px 10px;
+    border-radius: 12px;
+    font-size: 0.8em;
+    font-weight: 600;
+    border: 1px solid rgba(0,0,0,0.05);
+    display: flex;
+    align-items: center;
+}
+
+.mini-tag-pill.more {
+    background-color: #eee;
+    color: #666;
+}
+
+.add-tag-tiny-btn {
+    background: none;
+    border: 1px dashed var(--ui-header);
+    color: var(--ui-header);
+    padding: 3px 10px;
+    border-radius: 12px;
+    font-size: 0.8em;
+    cursor: pointer;
+    font-weight: bold;
+    transition: all 0.2s;
+}
+
+.add-tag-tiny-btn:hover {
+    background-color: var(--ui-header);
+    color: white;
+}
+
+/* --- Tag Selector Modal Grid --- */
+.tag-selector-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+    gap: 12px;
+    max-height: 400px;
+    overflow-y: auto;
+    padding: 10px;
+}
+
+.tag-select-card {
+    display: flex;
+    align-items: center;
+    padding: 10px;
+    border: 1px solid #eee;
+    border-radius: 8px;
+    cursor: pointer;
+    background: white;
+    transition: all 0.2s;
+}
+
+.tag-select-card:hover {
+    border-color: var(--ui-header);
+    background-color: #FFF0F5;
+}
+
+.tag-select-card.active {
+    background-color: var( --border-color);
+    border-color: var(--ui-header);
+    color: white;
+}
+
+.tag-icon-circle {
+    width: 24px;
+    height: 24px;
+    background: rgba(255,255,255,0.5);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-right: 8px;
+}
+/* Invert icon color when card is active */
+.tag-select-card.active .tag-icon-circle {
+    background: white;
+    color: var(--ui-header);
+}

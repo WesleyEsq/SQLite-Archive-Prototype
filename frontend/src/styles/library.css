@@ -1,122 +1,313 @@
-/* --- Library Wrapper & Toolbar --- */
+/* --- Wrapper & Layout --- */
 .library-wrapper {
     width: 100%;
     display: flex;
     flex-direction: column;
-    align-items: center;
+    height: 100vh; /* Full viewport height */
+    overflow: hidden; /* Stop the whole page from scrolling */
+}
+
+/* --- Boxed Header --- */
+.library-header-box {
+    width: 100%;
+    background: white;
+    border-bottom: 1px solid #eee;
+    display: flex;
+    justify-content: center;
+    padding: 20px 0;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.02);
+    z-index: 20;
+    flex-shrink: 0;
 }
 
 .library-toolbar {
     width: 100%;
-    max-width: 1100px;
-    padding: 20px 30px 0 30px;
+    max-width: 95%;
     display: flex;
     justify-content: space-between;
     align-items: center;
 }
 
-.sort-controls label { font-weight: bold; color: var(--ui-header); margin-right: 10px; }
-.sort-controls select {
-    padding: 8px;
-    border-radius: 4px;
-    border: 1px solid var(--border-color);
-    background: white;
-    color: var(--text-color);
-    cursor: pointer;
+/* --- Search & Inputs (Kept sleek) --- */
+.search-input-wrapper {
+    display: flex;
+    align-items: center;
+    position: relative;
+    width: 400px;
 }
 
-/* --- The Shelf Layout --- */
-.shelf-container {
+.search-input-wrapper input {
+    width: 100%;
+    padding: 12px 50px 12px 20px;
+    border-radius: 30px;
+    border: 2px solid #eee;
+    outline: none;
+    font-size: 1rem;
+    transition: all 0.2s;
+    background: #f9f9f9;
+}
+
+.search-input-wrapper input:focus {
+    border-color: var(--ui-header);
+    background: white;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+}
+
+.search-circle-btn {
+    position: absolute;
+    right: 6px;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 38px;
+    height: 38px;
+    background: var(--ui-header);
+    border: none;
+    border-radius: 50%;
+    color: white;
     display: flex;
     align-items: center;
     justify-content: center;
-    width: 100%;
-    max-width: 1600px;
-    margin-top: 20px;
-    gap: 15px;
-}
-
-.library-grid-7col {
-    display: grid;
-    grid-template-columns: repeat(7, 1fr); 
-    grid-template-rows: repeat(2, 1fr);
-    gap: 20px;
-    width: 100%;
-    min-height: 600px;
-}
-
-/* Responsive */
-@media (max-width: 1400px) { .library-grid-7col { grid-template-columns: repeat(5, 1fr); } }
-@media (max-width: 1000px) { .library-grid-7col { grid-template-columns: repeat(4, 1fr); } }
-
-/* --- Navigation Arrows --- */
-.nav-arrow {
-    background: none;
-    border: none;
-    font-size: 4rem;
-    color: var(--ui-header);
     cursor: pointer;
-    padding: 0 20px;
-    transition: transform 0.2s, color 0.2s;
-    user-select: none;
-    height: 100%;
+    transition: all 0.2s;
+}
+
+.search-circle-btn:hover { background: #a0153e; transform: translateY(-50%) scale(1.1); }
+
+.sort-controls select {
+    padding: 10px 15px;
+    border-radius: 8px;
+    border: 1px solid #eee;
+    background: #f9f9f9;
+    cursor: pointer;
+    font-weight: 600;
+    color: #555;
+}
+
+/* --- Content Area --- */
+.library-content-area {
+    /* No padding here, AutoSizer needs full dimensions */
+    flex-grow: 1;
+    width: 100%;
+    overflow: hidden;
+}
+
+/* --- CAROUSEL (The Row) --- */
+.category-row {
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    margin-top: 20px;
+}
+
+.section-title {
+    font-size: 1.2rem;
+    color: #444;
+    margin-bottom: 15px;
+    margin-left: 40px; /* Align with content */
     display: flex;
     align-items: center;
+    gap: 10px;
 }
-.nav-arrow:hover:not(.disabled) { transform: scale(1.2); color: var(--header-bg); }
-.nav-arrow.disabled { color: #e0e0e0; cursor: default; }
 
-/* --- Library Card --- */
+.count-badge {
+    background: #eee; color: #666; padding: 2px 8px; border-radius: 12px; font-size: 0.8em;
+}
+
+/* THE WRAPPER: Constrains width so arrows stay on screen */
+.carousel-wrapper {
+    position: relative;
+    width: 100%;
+}
+
+/* Hide the default scrollbar on the virtual list */
+.virtual-scroll-track {
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+}
+.virtual-scroll-track::-webkit-scrollbar { display: none; }
+
+/* NAVIGATION ARROWS */
+.carousel-btn {
+    position: absolute;
+    top: 10px;
+    bottom: 20px;
+    width: 60px;
+    z-index: 20;
+    background: rgba(255,255,255,0.9);
+    border: none;
+    color: var(--ui-header);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.2s;
+    opacity: 0; /* Hidden until hover */
+}
+
+/* Show arrows when hovering the whole wrapper */
+.carousel-wrapper:hover .carousel-btn { opacity: 1; }
+
+.carousel-btn:hover {
+    background: rgba(255,255,255,1);
+    color: #a0153e;
+    box-shadow: 0 0 15px rgba(0,0,0,0.1);
+}
+
+/* Pin them to the edges of the WRAPPER (Screen), not the track */
+.carousel-btn.left { 
+    left: 0; 
+    background: linear-gradient(to right, rgba(255,255,255,1) 40%, rgba(255,255,255,0)); 
+}
+.carousel-btn.right { 
+    right: 0; 
+    background: linear-gradient(to left, rgba(255,255,255,1) 40%, rgba(255,255,255,0)); 
+}
+
+/* --- CARD STYLES --- */
 .library-card {
+    width: 100%;
+    height: 100%; /* Fill the virtual cell */
+    
     background: white;
     border-radius: 8px;
     overflow: hidden;
     cursor: pointer;
-    transition: transform 0.2s;
-    box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+    transition: transform 0.2s, box-shadow 0.2s;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.05);
     display: flex;
     flex-direction: column;
+    position: relative;
+    border: 1px solid #f0f0f0;
 }
-.library-card:hover { transform: translateY(-5px); box-shadow: 0 10px 20px rgba(128, 15, 47, 0.2); }
-.library-card.placeholder { visibility: hidden; pointer-events: none; }
+
+.library-card:hover { 
+    transform: translateY(-5px); 
+    box-shadow: 0 10px 20px rgba(128, 15, 47, 0.15); 
+    z-index: 5;
+}
 
 .library-card-image-wrapper {
     position: relative;
-    height: 350px;
-    background-color: #eee;
+    height: 240px; /* Adjust proportionally */
+    background: #f0f0f0;
     overflow: hidden;
 }
 
-.fade-in { animation: fadeIn 0.5s ease-in; width: 100%; height: 100%; object-fit: cover; }
-@keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
-
-.loading-placeholder {
-    width: 100%; height: 100%; display: flex; align-items: center; justify-content: center;
-    color: #999; font-size: 0.9em; background-color: #f0f0f0;
+.library-cover-img {
+    width: 100%; height: 100%; object-fit: cover;
+    opacity: 0; transition: opacity 0.3s ease;
 }
+.library-cover-img.loaded { opacity: 1; }
 
 .library-card-title {
-    padding: 10px;
-    font-weight: bold;
+    flex-grow: 1; /* Fill remaining space */
+    padding: 0 10px;
+    font-size: 0.9rem;
+    font-weight: 700;
     text-align: center;
-    color: var(--text-color);
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
+    color: #444;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-top: 1px solid #f9f9f9;
 }
 
-.library-card-overlay {
-    position: absolute;
-    top: 10px; right: 10px;
+/* --- GRID MODE (Search) --- */
+.search-results-container {
+    padding: 0 40px;
+}
+.library-grid-results {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: 30px;
+}
+/* In grid mode, let cards fill their grid cell */
+.library-grid-results .library-card {
+    flex: unset;
+    width: 100%;
 }
 
-.rank-badge {
-    background-color: rgba(0,0,0,0.8);
-    color: white;
-    padding: 4px 8px;
-    border-radius: 4px;
-    font-weight: bold;
-    font-size: 0.9em;
+
+.virtuoso-grid-list {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+    gap: 20px;
+    padding-bottom: 40px;
 }
 
-.page-indicator { margin-top: 10px; font-weight: bold; color: #888; }
+/* Ensure the scroll container doesn't have a visible scrollbar in Carousel mode */
+.carousel-scroller {
+    scrollbar-width: none; /* Firefox */
+    -ms-overflow-style: none; /* IE */
+}
+.carousel-scroller::-webkit-scrollbar { 
+    display: none; /* Chrome */
+}
+
+/* Fix Card Height in Grid */
+.library-card {
+    height: 100%; /* Fill the wrapper div provided by Virtuoso */
+}
+
+/* ... existing styles ... */
+
+.library-cover-img {
+    width: 100%; 
+    height: 100%; 
+    object-fit: cover;
+    opacity: 0; 
+    /* The animation duration */
+    transition: opacity 0.5s ease;
+    position: relative; 
+    z-index: 2;
+}
+
+.library-cover-img.loaded { 
+    opacity: 1; 
+}
+
+/* NEW CLASS: Bypasses animation for re-appearing items */
+.library-cover-img.instant {
+    transition: none !important;
+    opacity: 1 !important;
+}
+
+/* Ensure scroller is smooth */
+.carousel-scroller {
+    scroll-behavior: smooth;
+}
+
+/* frontend/src/styles/library.css */
+
+/* --- CUSTOM SCROLLBAR (Webkit) --- */
+/* This targets the Virtuoso container specifically if we add the class */
+.custom-scrollbar::-webkit-scrollbar {
+    width: 10px; /* Width of the vertical scrollbar */
+}
+
+.custom-scrollbar::-webkit-scrollbar-track {
+    background: #f4f4f4; /* Light gray track */
+    border-radius: 5px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb {
+    background-color: #e0a3b3; /* Soft Pink (Unfocused) */
+    border-radius: 5px;
+    border: 2px solid #f4f4f4; /* Creates padding effect */
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+    background-color: var(--ui-header); /* Crimson on Hover */
+}
+
+/* --- GRID LAYOUT FIXES --- */
+/* Ensure the grid list accounts for padding in its width calculation */
+.virtuoso-grid-list {
+    display: grid;
+    /* Auto-fill columns, min 200px */
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); 
+    gap: 20px;
+    padding: 10px 20px 40px 5px; /* Right padding ensures cards don't touch scrollbar */
+    box-sizing: border-box; /* CRITICAL: Includes padding in width */
+    width: 100% !important; /* Force Virtuoso to respect container */
+}
