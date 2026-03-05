@@ -38,32 +38,35 @@ func (db *DB) AddFile(groupsetID int, filename, mimeType string, sizeBytes int64
 	if err != nil {
 		return 0, err
 	}
-	defer tx.Rollback() // Rolls back if anything fails before tx.Commit()
+	defer tx.Rollback()
 
-	// 1. Insert Metadata (Fast)
-	result, err := tx.Exec(
-		"INSERT INTO files (groupset_id, filename, mime_type, size_bytes, sort_order) VALUES (?, ?, ?, ?, ?)",
-		groupsetID, filename, mimeType, sizeBytes, sortOrder,
-	)
+	// 1. Insert into the Vault (files table)
+	res, err := tx.Exec("INSERT INTO files (filename, mime_type, size_bytes) VALUES (?, ?, ?)", filename, mimeType, sizeBytes)
+	if err != nil {
+		return 0, err
+	}
+	fileID, _ := res.LastInsertId()
+
+	// 2. Insert the heavy BLOB into the objects table
+	_, err = tx.Exec("INSERT INTO objects (file_id, data) VALUES (?, ?)", fileID, data)
 	if err != nil {
 		return 0, err
 	}
 
-	fileID, err := result.LastInsertId()
-	if err != nil {
-		return 0, err
-	}
-
-	// 2. Insert BLOB into Object Store (Heavy)
-	_, err = tx.Exec(
-		"INSERT INTO objects (file_id, data) VALUES (?, ?)",
-		fileID, data,
-	)
+	// 3. Create the Link in the junction table!
+	_, err = tx.Exec("INSERT INTO groupset_files (groupset_id, file_id, sort_order) VALUES (?, ?, ?)", groupsetID, fileID, sortOrder)
 	if err != nil {
 		return 0, err
 	}
 
 	return int(fileID), tx.Commit()
+}
+
+// UnlinkFile removes the file from the group, but keeps it safe in the Vault!
+func (db *DB) DeleteFile(fileID int, groupsetID int) error {
+	// Notice we only delete the LINK now. The file stays in the Vault for the AI.
+	_, err := db.conn.Exec("DELETE FROM groupset_files WHERE file_id = ? AND groupset_id = ?", fileID, groupsetID)
+	return err
 }
 
 func (db *DB) UpdateFileMetadata(id int, filename, mimeType string, sortOrder int) error {
@@ -72,13 +75,6 @@ func (db *DB) UpdateFileMetadata(id int, filename, mimeType string, sortOrder in
 		"UPDATE files SET filename = ?, mime_type = ?, sort_order = ? WHERE id = ?",
 		filename, mimeType, sortOrder, id,
 	)
-	return err
-}
-
-func (db *DB) DeleteFile(id int) error {
-	// Because of ON DELETE CASCADE, deleting the file metadata row
-	// automatically wipes the massive BLOB from the 'objects' table.
-	_, err := db.conn.Exec("DELETE FROM files WHERE id = ?", id)
 	return err
 }
 
@@ -102,6 +98,7 @@ func (db *DB) FetchFileBlob(fileID int) ([]byte, string, error) {
 }
 
 // UpdateFileOrder takes a list of files and updates their sort_order in a transaction
+// UpdateFileOrder updates the sorting in the junction table
 func (db *DB) UpdateFileOrder(files []File) error {
 	tx, err := db.conn.Begin()
 	if err != nil {
@@ -109,17 +106,16 @@ func (db *DB) UpdateFileOrder(files []File) error {
 	}
 	defer tx.Rollback()
 
-	stmt, err := tx.Prepare("UPDATE files SET sort_order = ? WHERE id = ?")
+	stmt, err := tx.Prepare("UPDATE groupset_files SET sort_order = ? WHERE file_id = ? AND groupset_id = ?")
 	if err != nil {
 		return err
 	}
 	defer stmt.Close()
 
 	for _, f := range files {
-		if _, err := stmt.Exec(f.SortOrder, f.ID); err != nil {
+		if _, err := stmt.Exec(f.SortOrder, f.ID, f.GroupSetID); err != nil {
 			return err
 		}
 	}
-
 	return tx.Commit()
 }

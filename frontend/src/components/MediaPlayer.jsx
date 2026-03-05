@@ -10,26 +10,16 @@ export default function MediaPlayer({ playlist, startIndex, onClose }) {
 
     // 1. Build the Stream URL (Sidecar Server)
     const streamUrl = `http://localhost:40001/stream/${asset.id}/${encodeURIComponent(asset.filename)}`;
-    // ...
 
     // --- EFFECT: Handle Mouse Movement (Fade UI) ---
     useEffect(() => {
         const handleMouseMove = () => {
             setShowControls(true);
-            
-            // Clear existing timer
             if (controlsTimeoutRef.current) clearTimeout(controlsTimeoutRef.current);
-            
-            // Set new timer to hide controls after 2.5 seconds of inactivity
-            controlsTimeoutRef.current = setTimeout(() => {
-                setShowControls(false);
-            }, 2500);
+            controlsTimeoutRef.current = setTimeout(() => setShowControls(false), 2500);
         };
 
-        // Attach listener
         window.addEventListener('mousemove', handleMouseMove);
-        
-        // Initial timer start
         handleMouseMove();
 
         return () => {
@@ -43,23 +33,15 @@ export default function MediaPlayer({ playlist, startIndex, onClose }) {
         const video = videoRef.current;
         if (!video) return;
 
-        // Key for localStorage: "gogl_progress_{asset_id}"
         const storageKey = `gogl_progress_${asset.id}`;
         
         const loadSavedTime = () => {
             const savedTime = localStorage.getItem(storageKey);
-            if (savedTime) {
-                video.currentTime = parseFloat(savedTime);
-            }
+            if (savedTime) video.currentTime = parseFloat(savedTime);
         };
 
-        // When video metadata loads, jump to saved time
         video.addEventListener('loadedmetadata', loadSavedTime);
-
-        // Save time every 5 seconds (or on standard timeupdate)
-        const saveTime = () => {
-            localStorage.setItem(storageKey, video.currentTime);
-        };
+        const saveTime = () => localStorage.setItem(storageKey, video.currentTime);
         video.addEventListener('timeupdate', saveTime);
 
         return () => {
@@ -69,27 +51,17 @@ export default function MediaPlayer({ playlist, startIndex, onClose }) {
     }, [asset.id]);
 
     // --- HANDLERS ---
-    
     const handleNext = () => {
-        if (currentIndex < playlist.length - 1) {
-            setCurrentIndex(currentIndex + 1);
-        }
+        if (currentIndex < playlist.length - 1) setCurrentIndex(currentIndex + 1);
     };
 
     const handlePrev = () => {
-        if (currentIndex > 0) {
-            setCurrentIndex(currentIndex - 1);
-        }
+        if (currentIndex > 0) setCurrentIndex(currentIndex - 1);
     };
 
-    // Auto-play next video when current ends
     const handleVideoEnd = () => {
-        // Clear progress for the finished video so next time it starts at 0
         localStorage.removeItem(`gogl_progress_${asset.id}`);
-        
-        if (currentIndex < playlist.length - 1) {
-            handleNext();
-        }
+        if (currentIndex < playlist.length - 1) handleNext();
     };
 
     return (
@@ -107,21 +79,22 @@ export default function MediaPlayer({ playlist, startIndex, onClose }) {
                     <button className="cinema-close-btn" onClick={onClose}>×</button>
                 </div>
 
-                {/* --- VIDEO PLAYER --- */}
+                {/* --- VIDEO PLAYER FIXED --- */}
                 <video 
                     ref={videoRef}
-                    key={streamUrl} // Force React to re-mount video element on change
+                    key={streamUrl} 
                     className="cinema-video"
                     controls 
                     autoPlay 
-                    crossOrigin="anonymous"
                     onEnded={handleVideoEnd}
+                    // REMOVED: crossOrigin="anonymous" to prevent CORS blocking
                 >
-                    <source src={streamUrl} type={asset.mime_type} />
+                    {/* REMOVED: type={asset.mime_type} to force browser sniffing */}
+                    <source src={streamUrl} />
                     Your browser does not support the video tag.
                 </video>
 
-                {/* --- PREV/NEXT OVERLAY BUTTONS (Optional, visual cues) --- */}
+                {/* --- PREV/NEXT OVERLAY BUTTONS --- */}
                 <div className={`cinema-controls ${showControls ? 'visible' : 'hidden'}`}>
                     {currentIndex > 0 && (
                         <button className="nav-btn prev" onClick={handlePrev}>‹</button>

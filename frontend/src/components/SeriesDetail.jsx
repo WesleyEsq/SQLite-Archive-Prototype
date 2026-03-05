@@ -15,12 +15,23 @@ import {
 } from 'lucide-react';
 
 export default function SeriesDetail({ entry, onBack }) {
-    // 1. Initialize the Controller
     const {
         groups, assets, expandedGroupId, uploadingGroupId, uploadProgress, viewerContext,
         toggleGroup, handleCreateGroup, handleDeleteGroup, handleFileUpload, 
         handleDragEnd, handleDownload, handleDeleteAsset, handleView, closeViewer
     } = useSeriesDetail(entry.id);
+
+    // --- NEW: Robust File Type Checker ---
+    const getAssetType = (asset) => {
+        const mime = (asset.mime_type || '').toLowerCase();
+        const fname = (asset.filename || '').toLowerCase();
+        
+        const isVideo = mime.startsWith('video/') || fname.endsWith('.mp4') || fname.endsWith('.webm') || fname.endsWith('.mkv');
+        const isPdf = mime.includes('pdf') || fname.endsWith('.pdf');
+        const isEpub = mime.includes('epub') || fname.endsWith('.epub');
+        
+        return { isVideo, isPdf, isEpub, canView: isVideo || isPdf || isEpub };
+    };
 
     return (
         <div className="series-detail-container">
@@ -31,7 +42,6 @@ export default function SeriesDetail({ entry, onBack }) {
                 </button>
                 
                 <div className="hero-content">
-                    {/* FIXED IMAGE SOURCE: Now using the high-speed handler */}
                     <img 
                         src={`/images/${entry.id}?t=${Date.now()}`} 
                         className="hero-poster" 
@@ -50,7 +60,6 @@ export default function SeriesDetail({ entry, onBack }) {
                                 {entry.rank}
                             </span>
                             <span className="meta-pill">#{entry.number}</span>
-                            {/* Dynamic Icon based on content type guess */}
                             <span className="meta-icon">
                                 {groups.some(g => g.title.toLowerCase().includes('season')) ? <Tv size={16}/> : <BookOpen size={24}/>}
                             </span>
@@ -81,7 +90,6 @@ export default function SeriesDetail({ entry, onBack }) {
 
                     {groups.map(group => (
                         <div key={group.id} className={`collection-card ${expandedGroupId === group.id ? 'expanded' : ''}`}>
-                            {/* GROUP HEADER */}
                             <div className="collection-header" onClick={() => toggleGroup(group.id)}>
                                 <div className="collection-title-wrapper">
                                     <span className="collection-icon">
@@ -103,7 +111,6 @@ export default function SeriesDetail({ entry, onBack }) {
                                 </div>
                             </div>
 
-                            {/* EXPANDED CONTENT (ASSET LIST) */}
                             {expandedGroupId === group.id && (
                                 <Droppable droppableId={`group-${group.id}`} type={`group-${group.id}`}>
                                     {(provided) => (
@@ -112,7 +119,10 @@ export default function SeriesDetail({ entry, onBack }) {
                                             ref={provided.innerRef}
                                             {...provided.droppableProps}
                                         >
-                                            {assets[group.id] && assets[group.id].map((asset, index) => (
+                                            {assets[group.id] && assets[group.id].map((asset, index) => {
+                                                const typeInfo = getAssetType(asset); // <--- Use our new checker
+                                                
+                                                return (
                                                 <Draggable key={asset.id} draggableId={String(asset.id)} index={index}>
                                                     {(provided, snapshot) => (
                                                         <div 
@@ -121,72 +131,51 @@ export default function SeriesDetail({ entry, onBack }) {
                                                             {...provided.draggableProps}
                                                             style={provided.draggableProps.style}
                                                         >
-                                                            {/* DRAG HANDLE */}
-                                                            <div 
-                                                                className="track-drag-handle"
-                                                                {...provided.dragHandleProps}
-                                                                title="Reorder"
-                                                            >
+                                                            <div className="track-drag-handle" {...provided.dragHandleProps} title="Reorder">
                                                                 <GripVertical size={16} color="#ccc" />
                                                             </div>
 
-                                                            {/* INDEX */}
                                                             <div className="track-index">{index + 1}</div>
 
-                                                            {/* FILE ICON */}
+                                                            {/* FILE ICON (Fixed logic) */}
                                                             <div className="track-icon">
-                                                                {asset.mime_type.includes('pdf') ? <FileText size={18} color="#e74c3c"/> : 
-                                                                 asset.mime_type.includes('video') ? <Film size={18} color="#3498db"/> : 
+                                                                {typeInfo.isPdf ? <FileText size={18} color="#e74c3c"/> : 
+                                                                 typeInfo.isVideo ? <Film size={18} color="#3498db"/> : 
                                                                  <File size={18} color="#95a5a6"/>}
                                                             </div>
 
-                                                            {/* INFO */}
                                                             <div className="track-info">
                                                                 <div className="track-title">{asset.title || asset.filename}</div>
                                                                 <div className="track-filename">{asset.filename}</div>
                                                             </div>
                                                             
-                                                            {/* ACTIONS */}
                                                             <div className="track-actions">
-                                                                {/* View/Play */}
-                                                                {(asset.mime_type.startsWith('video/') || 
-                                                                  asset.mime_type === 'application/pdf' || 
-                                                                  asset.mime_type === 'application/epub+zip') && (
+                                                                {/* View/Play (Fixed logic) */}
+                                                                {typeInfo.canView && (
                                                                     <button 
                                                                         className="track-action-btn play" 
                                                                         onClick={() => handleView(asset, assets[group.id], index)}
-                                                                        title={asset.mime_type.startsWith('video/') ? "Play" : "Read"}
+                                                                        title={typeInfo.isVideo ? "Play" : "Read"}
                                                                     >
-                                                                        {asset.mime_type.startsWith('video/') ? <PlayCircle size={18}/> : <Eye size={18}/>}
-                                                                        <span>{asset.mime_type.startsWith('video/') ? "Play" : "View"}</span>
+                                                                        {typeInfo.isVideo ? <PlayCircle size={18}/> : <Eye size={18}/>}
+                                                                        <span>{typeInfo.isVideo ? "Play" : "View"}</span>
                                                                     </button>
                                                                 )}
 
-                                                                {/* Download */}
-                                                                <button 
-                                                                    className="track-action-btn download"
-                                                                    onClick={() => handleDownload(asset)}
-                                                                    title="Download"
-                                                                >
+                                                                <button className="track-action-btn download" onClick={() => handleDownload(asset)} title="Download">
                                                                     <Download size={18} />
                                                                 </button>
                                                                 
-                                                                {/* Delete */}
-                                                                <button 
-                                                                    className="track-action-btn delete"
-                                                                    onClick={() => handleDeleteAsset(asset.id, group.id)}
-                                                                    title="Delete File"
-                                                                >
+                                                                <button className="track-action-btn delete" onClick={() => handleDeleteAsset(asset.id, group.id)} title="Delete File">
                                                                     <Trash2 size={18} />
                                                                 </button>
                                                             </div>
                                                         </div>
                                                     )}
                                                 </Draggable>
-                                            ))}
+                                            )})}
                                             {provided.placeholder}
 
-                                            {/* --- THE NEW OS UPLOAD BUTTON --- */}
                                             {uploadingGroupId === group.id ? (
                                                 <div className="asset-upload-row loading" style={{ display: 'flex', justifyContent: 'center', padding: '15px' }}>
                                                     <div className="upload-spinner" style={{ marginRight: '10px' }}></div>

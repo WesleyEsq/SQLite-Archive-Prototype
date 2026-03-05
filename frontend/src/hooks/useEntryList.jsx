@@ -4,81 +4,79 @@ import {
     GetTagsForEntry 
 } from '../../wailsjs/go/main/App';
 
-export function useEntryList(isAddingNew, onAddComplete, refreshTrigger) {
-    // --- STATE ---
+// ADDED libraryId as the first parameter
+export function useEntryList(libraryId, isAddingNew, onAddComplete, refreshTrigger) {
     const [entries, setEntries] = useState([]);
     const [searchQuery, setSearchQuery] = useState("");
-    
-    // Edit Mode State
     const [editingId, setEditingId] = useState(null);
     const [editForm, setEditForm] = useState({});
-    
-    // View Mode State
     const [expandedRowId, setExpandedRowId] = useState(null);
-    
-    // Tag State
     const [entryTags, setEntryTags] = useState({}); 
-    const [tagModalTarget, setTagModalTarget] = useState(null);
+    const [tagModalTarget, setTagModalTarget] = useState(null); 
 
-    // --- EFFECTS ---
-    useEffect(() => { refreshEntries(); }, [refreshTrigger]);
+    useEffect(() => { 
+        if (libraryId) refreshEntries(); 
+    }, [libraryId, refreshTrigger]);
 
     useEffect(() => {
         if (isAddingNew) {
             const nextNum = entries.length > 0 ? String(entries.length + 1) : "1";
             startEditing({ 
-                id: 'NEW', number: nextNum, title: '', comment: '', rank: '', description: '',
+                id: 'NEW', number: nextNum, title: '', comment: '', rank: '', 
+                description: '', textAlignment: 'justify' 
             });
         }
-    }, [isAddingNew, entries.length]);
+    }, [isAddingNew]);
 
-    // --- ACTIONS ---
     const refreshEntries = () => {
-        // NOTE: For the prototype, we assume Library ID 1. 
-        // Later, we'll pass the active libraryId from App.jsx
-        GetEntries(1).then(res => setEntries(res || [])).catch(console.error);
+        GetEntries(libraryId).then(res => setEntries(res || [])).catch(console.error);
     };
 
-    const handleSearchKeyDown = (e, localSearch) => {
-        if (e.key === 'Enter') setSearchQuery(localSearch);
-    };
+    const handleSearchKeyDown = (e) => { if (e.key === 'Enter') refreshEntries(); };
 
-    const startEditing = (entry) => {
+    const startEditing = async (entry) => {
+        let fullEntry = { ...entry };
+        if (!fullEntry.textAlignment) fullEntry.textAlignment = 'justify';
         setEditingId(entry.id);
-        // Note: No more Base64 image payload in the edit form!
-        setEditForm({ ...entry });
-        setExpandedRowId(null); 
+        setEditForm(fullEntry);
+        setExpandedRowId(entry.id);
     };
 
     const cancelEditing = () => {
-        setEditingId(null);
-        if (isAddingNew && onAddComplete) onAddComplete();
+        setEditingId(null); setEditForm({});
+        if (isAddingNew) onAddComplete();
     };
 
     const saveEdit = () => {
-        // Backend now handles images separately. We just save the text data.
-        SaveEntry(editForm).then(() => {
+        // --- THE FIX: Strict Integer Casting for Go ---
+        const payload = { 
+            ...editForm, 
+            id: editForm.id === 'NEW' ? 0 : parseInt(editForm.id, 10),
+            library_id: parseInt(libraryId, 10) // Ensure it gets attached to the current library
+        };
+        
+        SaveEntry(payload).then(() => {
+            refreshEntries(); 
             setEditingId(null);
-            if (isAddingNew && onAddComplete) onAddComplete();
-            refreshEntries();
-        }).catch(err => alert("Failed to save: " + err));
+            if (isAddingNew) onAddComplete();
+        }).catch(err => alert("Error saving entry: " + err));
     };
 
-    const handleDelete = (id) => {
-        if (confirm("Delete this entry?")) {
-            DeleteEntry(id).then(refreshEntries).catch(err => alert("Error: " + err));
-        }
+    const handleDelete = (id) => { 
+        if (window.confirm("Delete this entry?")) DeleteEntry(id).then(refreshEntries); 
     };
 
+    const handleChange = (e) => setEditForm(prev => ({ ...prev, [e.target.name]: e.target.value }));
+    const handleAlignment = (align) => setEditForm(prev => ({ ...prev, textAlignment: align }));
+    
     const handleDragEnd = (result) => {
-        if (!result.destination) return;
-        const reordered = Array.from(entries);
-        const [moved] = reordered.splice(result.source.index, 1);
-        reordered.splice(result.destination.index, 0, moved);
-
-        const updated = reordered.map((e, index) => ({ ...e, number: String(index + 1) }));
+        if (!result.destination || editingId || searchQuery !== "") return;
+        const items = Array.from(entries);
+        const [reorderedItem] = items.splice(result.source.index, 1);
+        items.splice(result.destination.index, 0, reorderedItem);
+        const updated = items.map((item, idx) => ({ ...item, number: String(idx + 1) }));
         setEntries(updated);
-        UpdateOrder(updated).catch(() => refreshEntries());
+        UpdateOrder(updated).catch(alert);
     };
 
     const handleRowClick = async (id) => {
@@ -87,7 +85,6 @@ export function useEntryList(isAddingNew, onAddComplete, refreshTrigger) {
         setExpandedRowId(isExpanding ? id : null);
         
         if (isExpanding) {
-            // We ONLY fetch tags now. The image is handled automatically by the browser!
             GetTagsForEntry(id).then(tags => {
                 setEntryTags(prev => ({ ...prev, [id]: tags || [] }));
             });
@@ -100,15 +97,11 @@ export function useEntryList(isAddingNew, onAddComplete, refreshTrigger) {
         });
     };
 
-    const handleChange = (e) => setEditForm({ ...editForm, [e.target.name]: e.target.value });
-    const handleAlignment = (alignment) => setEditForm({ ...editForm, textAlignment: alignment });
-
     return {
         entries, editingId, editForm, expandedRowId, searchQuery, 
         entryTags, tagModalTarget,
-        setSearchQuery, setTagModalTarget,
-        refreshEntries, handleSearchKeyDown, startEditing, cancelEditing, saveEdit, 
-        handleDelete, handleDragEnd, handleRowClick, refreshTags,
-        handleChange, handleAlignment
+        setSearchQuery, setTagModalTarget, refreshEntries, handleSearchKeyDown, 
+        startEditing, cancelEditing, saveEdit, handleDelete, handleDragEnd, 
+        handleRowClick, refreshTags, handleChange, handleAlignment
     };
 }

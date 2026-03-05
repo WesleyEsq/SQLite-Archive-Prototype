@@ -78,71 +78,94 @@ func createTables(db *sql.DB) error {
 	queries := []string{
 		// 1. Top-Level Libraries
 		`CREATE TABLE IF NOT EXISTS libraries (
-			id INTEGER PRIMARY KEY AUTOINCREMENT,
-			name TEXT NOT NULL,
-			type TEXT,
-			author TEXT,
-			description TEXT,
-			cover_image BLOB
-		);`,
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            name TEXT NOT NULL,
+            type TEXT,
+            author TEXT,
+            description TEXT,
+            cover_image BLOB
+        );`,
 
 		// 2. Generic Entries (No blobs!)
 		`CREATE TABLE IF NOT EXISTS entries (
-			id INTEGER PRIMARY KEY AUTOINCREMENT,
-			library_id INTEGER NOT NULL,
-			title TEXT NOT NULL,
-			description TEXT,
-			number TEXT,
-			comment TEXT,
-			rank TEXT,
-			text_alignment TEXT,
-			FOREIGN KEY(library_id) REFERENCES libraries(id) ON DELETE CASCADE
-		);`,
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            library_id INTEGER NOT NULL,
+            title TEXT NOT NULL,
+            description TEXT,
+            number TEXT,
+            comment TEXT,
+            rank TEXT,
+            text_alignment TEXT,
+            FOREIGN KEY(library_id) REFERENCES libraries(id) ON DELETE CASCADE
+        );`,
 
 		// 3. Groupings (Seasons, Volumes, Cover Art group)
 		`CREATE TABLE IF NOT EXISTS group_sets (
-			id INTEGER PRIMARY KEY AUTOINCREMENT,
-			entry_id INTEGER NOT NULL,
-			title TEXT,
-			category TEXT,
-			sort_order INTEGER DEFAULT 0,
-			FOREIGN KEY(entry_id) REFERENCES entries(id) ON DELETE CASCADE
-		);`,
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            entry_id INTEGER NOT NULL,
+            title TEXT,
+            category TEXT,
+            sort_order INTEGER DEFAULT 0,
+            FOREIGN KEY(entry_id) REFERENCES entries(id) ON DELETE CASCADE
+        );`,
 
 		// 4. File Metadata (Lightning fast to query)
 		`CREATE TABLE IF NOT EXISTS files (
-			id INTEGER PRIMARY KEY AUTOINCREMENT,
-			groupset_id INTEGER NOT NULL,
-			filename TEXT,
-			mime_type TEXT,
-			size_bytes INTEGER,
-			sort_order INTEGER DEFAULT 0,
-			FOREIGN KEY(groupset_id) REFERENCES group_sets(id) ON DELETE CASCADE
-		);`,
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            groupset_id INTEGER NOT NULL,
+            filename TEXT,
+            mime_type TEXT,
+            size_bytes INTEGER,
+            sort_order INTEGER DEFAULT 0,
+            FOREIGN KEY(groupset_id) REFERENCES group_sets(id) ON DELETE CASCADE
+        );`,
 
 		// 5. The Pure-SQLite Object Store (1:1 with files)
 		`CREATE TABLE IF NOT EXISTS objects (
-			file_id INTEGER PRIMARY KEY,
-			data BLOB NOT NULL,
-			FOREIGN KEY(file_id) REFERENCES files(id) ON DELETE CASCADE
-		);`,
+            file_id INTEGER PRIMARY KEY,
+            data BLOB NOT NULL,
+            FOREIGN KEY(file_id) REFERENCES files(id) ON DELETE CASCADE
+        );`,
 
 		// 6. Tags Definition
 		`CREATE TABLE IF NOT EXISTS tags (
-			id INTEGER PRIMARY KEY AUTOINCREMENT,
-			name TEXT NOT NULL UNIQUE,
-			description TEXT,
-			icon TEXT
-		);`,
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            name TEXT NOT NULL UNIQUE,
+            description TEXT,
+            icon TEXT
+        );`,
 
 		// 7. Tags to Entries mapping
 		`CREATE TABLE IF NOT EXISTS entry_tags (
-			entry_id INTEGER NOT NULL,
-			tag_id INTEGER NOT NULL,
-			PRIMARY KEY (entry_id, tag_id),
-			FOREIGN KEY(entry_id) REFERENCES entries(id) ON DELETE CASCADE,
-			FOREIGN KEY(tag_id) REFERENCES tags(id) ON DELETE CASCADE
-		);`,
+            entry_id INTEGER NOT NULL,
+            tag_id INTEGER NOT NULL,
+            PRIMARY KEY (entry_id, tag_id),
+            FOREIGN KEY(entry_id) REFERENCES entries(id) ON DELETE CASCADE,
+            FOREIGN KEY(tag_id) REFERENCES tags(id) ON DELETE CASCADE
+        );`,
+
+		// 8. Table for image covers for entries
+		`CREATE TABLE IF NOT EXISTS entry_covers (
+            entry_id INTEGER PRIMARY KEY,
+            image_data BLOB NOT NULL,
+            FOREIGN KEY(entry_id) REFERENCES entries(id) ON DELETE CASCADE
+        );`,
+
+		// 9. Many-to-Many Vault Link Table
+		`CREATE TABLE IF NOT EXISTS groupset_files (
+            groupset_id INTEGER NOT NULL,
+            file_id INTEGER NOT NULL,
+            sort_order INTEGER DEFAULT 0,
+            PRIMARY KEY (groupset_id, file_id),
+            FOREIGN KEY(groupset_id) REFERENCES group_sets(id) ON DELETE CASCADE,
+            FOREIGN KEY(file_id) REFERENCES files(id) ON DELETE CASCADE
+        );`,
+
+		// 10. IDEMPOTENT Migration query
+		`INSERT INTO groupset_files (groupset_id, file_id, sort_order)
+        SELECT groupset_id, id, sort_order FROM files
+        WHERE groupset_id IS NOT NULL
+        ON CONFLICT(groupset_id, file_id) DO NOTHING;`,
 	}
 
 	for _, query := range queries {
@@ -150,6 +173,17 @@ func createTables(db *sql.DB) error {
 			return fmt.Errorf("failed executing schema query: %w\nQuery: %s", err, query)
 		}
 	}
+
+	db.Exec(`
+        INSERT INTO entry_covers (entry_id, image_data)
+        SELECT g.entry_id, o.data
+        FROM group_sets g
+        JOIN files f ON f.groupset_id = g.id
+        JOIN objects o ON o.file_id = f.id
+        WHERE g.category = 'Cover Art'
+        ON CONFLICT(entry_id) DO NOTHING;
+    `)
+	db.Exec(`DELETE FROM group_sets WHERE category = 'Cover Art';`)
 
 	return nil
 }
@@ -216,6 +250,16 @@ func (db *DB) DeleteEntry(id int) error {
 	// Since we enabled PRAGMA foreign_keys = ON, deleting this entry
 	// will automatically cascade and delete the GroupSets -> Files -> Objects!
 	_, err := db.conn.Exec("DELETE FROM entries WHERE id = ?", id)
+	return err
+}
+
+func (db *DB) SetEntryCover(entryID int, data []byte) error {
+	// ON CONFLICT DO UPDATE means it will seamlessly overwrite the old cover!
+	_, err := db.conn.Exec(`
+		INSERT INTO entry_covers (entry_id, image_data) 
+		VALUES (?, ?) 
+		ON CONFLICT(entry_id) DO UPDATE SET image_data = excluded.image_data
+	`, entryID, data)
 	return err
 }
 
@@ -314,10 +358,11 @@ func (db *DB) UpdateEntryOrder(entries []Entry) error {
 // GetFiles retrieves the lightweight metadata for all files in a specific GroupSet
 func (db *DB) GetFiles(groupsetID int) ([]File, error) {
 	query := `
-		SELECT id, groupset_id, COALESCE(filename, ''), COALESCE(mime_type, ''), size_bytes, sort_order 
-		FROM files 
-		WHERE groupset_id = ? 
-		ORDER BY sort_order ASC, id ASC
+		SELECT f.id, gf.groupset_id, COALESCE(f.filename, ''), COALESCE(f.mime_type, ''), f.size_bytes, gf.sort_order 
+		FROM files f
+		JOIN groupset_files gf ON f.id = gf.file_id
+		WHERE gf.groupset_id = ? 
+		ORDER BY gf.sort_order ASC, f.id ASC
 	`
 	rows, err := db.conn.Query(query, groupsetID)
 	if err != nil {

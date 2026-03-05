@@ -143,16 +143,8 @@ func (a *App) SetCoverImage(entryID int) error {
 		return err
 	}
 
-	// 1. Create a hidden GroupSet just for Cover Art
-	groupID, err := a.db.AddGroupSet(entryID, "Cover Art", "Cover Art", 0)
-	if err != nil {
-		return err
-	}
-
-	// 2. Insert the image blob
-	mimeType := http.DetectContentType(data)
-	_, err = a.db.AddFile(groupID, filepath.Base(selection), mimeType, int64(len(data)), data, 0)
-	return err
+	// Just pass it straight to the new 1:1 table!
+	return a.db.SetEntryCover(entryID, data)
 }
 
 // ==========================================
@@ -195,8 +187,8 @@ func (a *App) DeleteGroupSet(id int) error {
 	return a.db.DeleteGroupSet(id)
 }
 
-func (a *App) DeleteFile(id int) error {
-	return a.db.DeleteFile(id)
+func (a *App) DeleteFile(fileID int, groupsetID int) error {
+	return a.db.DeleteFile(fileID, groupsetID)
 }
 
 func (a *App) UpdateFileOrder(files []File) error {

@@ -7,3 +7,6 @@ frontend/node_modules
 compendium.db
 build
 assets
+*.db
+*.db-shm
+*.db-wal

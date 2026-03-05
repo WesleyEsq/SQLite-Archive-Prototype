@@ -18,8 +18,8 @@ export function DeleteEntry(arg1) {
   return window['go']['main']['App']['DeleteEntry'](arg1);
 }
 
-export function DeleteFile(arg1) {
-  return window['go']['main']['App']['DeleteFile'](arg1);
+export function DeleteFile(arg1, arg2) {
+  return window['go']['main']['App']['DeleteFile'](arg1, arg2);
 }
 
 export function DeleteGroupSet(arg1) {
@@ -84,6 +84,10 @@ export function SetCoverImage(arg1) {
 
 export function SetLibraryCover(arg1) {
   return window['go']['main']['App']['SetLibraryCover'](arg1);
+}
+
+export function StreamHandler(arg1, arg2) {
+  return window['go']['main']['App']['StreamHandler'](arg1, arg2);
 }
 
 export function UpdateEntryTags(arg1, arg2) {

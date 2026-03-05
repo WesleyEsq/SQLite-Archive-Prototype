@@ -17,7 +17,7 @@ export default function EntryList({ libraryId, isAddingNew, onAddComplete, refre
         refreshEntries, handleSearchKeyDown, startEditing, cancelEditing, saveEdit, 
         handleDelete, handleDragEnd, handleRowClick, refreshTags,
         handleChange, handleAlignment
-    } = useEntryList(isAddingNew, onAddComplete, refreshTrigger);
+    } = useEntryList(libraryId, isAddingNew, onAddComplete, refreshTrigger);
 
     // --- NATIVE OS UPLOAD HANDLER ---
     const handleUpdateCover = async (e, entryId) => {
@@ -27,7 +27,7 @@ export default function EntryList({ libraryId, isAddingNew, onAddComplete, refre
         }
         try {
             await SetCoverImage(entryId);
-            refreshEntries(); // Force image cache refresh
+            window.location.reload(); // Hey it works, don't blame me.
         } catch (err) {
             console.error("Cover upload failed:", err);
         }

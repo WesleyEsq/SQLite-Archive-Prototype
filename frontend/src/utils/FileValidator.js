@@ -1,34 +1,41 @@
 // src/utils/FileValidator.js
 
-// 1. Supported MIME Types (The Allowlist)
-const SUPPORTED_VIEWABLE = {
-    'video/mp4': 'video',
-    'video/webm': 'video',
-    'application/pdf': 'pdf',
-    'application/epub+zip': 'epub',
-    'image/jpeg': 'image', // Bonus: Image viewer support
-    'image/png': 'image'
-};
-
-// 2. Main Validator Class
 export const FileAuth = {
     /**
-     * Checks if we can open this file inside the app.
+     * Robust check combining mimeType and filename extension
      * @param {string} mimeType 
-     * @returns {string|null} - 'video', 'pdf', 'epub', or null
+     * @param {string} filename
+     * @returns {string|null} - 'video', 'pdf', 'epub', 'image' or null
      */
-    getViewType: (mimeType) => {
-        return SUPPORTED_VIEWABLE[mimeType] || null;
+    getViewType: (mimeType, filename = "") => {
+        const mime = (mimeType || '').toLowerCase();
+        const fname = (filename || '').toLowerCase();
+        
+        if (mime.startsWith('video/') || fname.endsWith('.mp4') || fname.endsWith('.webm') || fname.endsWith('.mkv')) {
+            return 'video';
+        }
+        if (mime.includes('pdf') || fname.endsWith('.pdf')) {
+            return 'pdf';
+        }
+        if (mime.includes('epub') || fname.endsWith('.epub')) {
+            return 'epub';
+        }
+        if (mime.startsWith('image/') || fname.endsWith('.jpg') || fname.endsWith('.png') || fname.endsWith('.webp')) {
+            return 'image';
+        }
+        
+        return null;
     },
 
     /**
      * Returns a human-friendly icon for the file list
      */
-    getIcon: (mimeType) => {
-        if (mimeType.startsWith('video/')) return '🎬';
-        if (mimeType.includes('pdf')) return '📄';
-        if (mimeType.includes('epub')) return '📚';
-        if (mimeType.startsWith('image/')) return '🖼️';
+    getIcon: (mimeType, filename = "") => {
+        const type = FileAuth.getViewType(mimeType, filename);
+        if (type === 'video') return '🎬';
+        if (type === 'pdf') return '📄';
+        if (type === 'epub') return '📚';
+        if (type === 'image') return '🖼️';
         return '📁';
     },
 

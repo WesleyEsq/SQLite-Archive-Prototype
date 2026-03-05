@@ -61,7 +61,7 @@ export function useSeriesDetail(entryId) {
         }
     };
 
-    // --- THE NEW NATIVE UPLOAD HANDLER ---
+    // This works by 
     const handleFileUpload = async (groupId) => {
         setUploadingGroupId(groupId);
         setUploadProgress("Waiting for OS File Picker...");
@@ -111,12 +111,14 @@ export function useSeriesDetail(entryId) {
 
     // Unified Viewer Logic
     const handleView = (asset, groupAssets, index) => {
-        const mime = asset.mime_type;
-        if (mime.startsWith('video/')) {
+        const mime = (asset.mime_type || '').toLowerCase();
+        const fname = (asset.filename || '').toLowerCase();
+        
+        if (mime.startsWith('video/') || fname.endsWith('.mp4') || fname.endsWith('.mkv') || fname.endsWith('.webm')) {
             setViewerContext({ type: 'video', playlist: groupAssets, startIndex: index });
-        } else if (mime === 'application/pdf') {
+        } else if (mime.includes('pdf') || fname.endsWith('.pdf')) {
             setViewerContext({ type: 'pdf', asset: asset });
-        } else if (mime === 'application/epub+zip') {
+        } else if (mime.includes('epub') || fname.endsWith('.epub')) {
             setViewerContext({ type: 'epub', asset: asset });
         } else {
             alert("No viewer available for this file type.");

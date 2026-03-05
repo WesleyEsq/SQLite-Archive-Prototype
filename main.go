@@ -3,6 +3,7 @@ package main
 import (
 	"embed"
 	"log"
+	"net/http"
 
 	"github.com/wailsapp/wails/v2"
 	"github.com/wailsapp/wails/v2/pkg/options"
@@ -21,22 +22,31 @@ func main() {
 	defer myDB.conn.Close()
 
 	app := NewApp(myDB)
+
+	// 2. Start the Sidecar Streaming Server
+	go func() {
+		// This uses the StreamHandler we defined above
+		mux := http.NewServeMux()
+		mux.HandleFunc("/stream/", app.StreamHandler)
+
+		log.Println("Sidecar streaming server running on http://localhost:40001")
+		if err := http.ListenAndServe(":40001", mux); err != nil {
+			log.Fatal("Streaming server crashed:", err)
+		}
+	}()
+
 	imgHandler := NewImageHandler(myDB.conn)
 
-	// 2. RUN WAILS (Fixed Configuration)
+	// 3. RUN WAILS
 	err = wails.Run(&options.App{
 		Title:  "GoGL Compendium",
 		Width:  1024,
 		Height: 768,
 
-		// --- THE FIX IS HERE ---
 		AssetServer: &assetserver.Options{
-			Assets: assets,
-			// We plug our handler in as "Middleware" so it can
-			// coexist with your frontend files.
+			Assets:     assets,
 			Middleware: imgHandler.AssetMiddleware,
 		},
-		// REMOVED: AssetsHandler: imgHandler (This was causing the panic)
 
 		BackgroundColour: &options.RGBA{R: 27, G: 38, B: 54, A: 1},
 		OnStartup:        app.Startup,
