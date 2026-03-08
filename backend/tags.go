@@ -1,4 +1,4 @@
-package main
+package backend
 
 // Tag struct remains exactly the same so the React frontend doesn't break
 type Tag struct {

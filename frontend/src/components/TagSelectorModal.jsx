@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { GetAllTags, UpdateEntryTags } from '../../wailsjs/go/main/App';
+import { GetAllTags, UpdateEntryTags } from '../../wailsjs/go/backend/App';
 import { renderIcon } from '../utils/iconMap';
 import { X, Check } from 'lucide-react';
 

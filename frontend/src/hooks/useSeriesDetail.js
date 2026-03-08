@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { 
     GetGroupSets, GetFiles, CreateGroupSet, DeleteGroupSet, 
     DeleteFile, ExportMediaAsset, UpdateFileOrder, ImportFile 
-} from '../../wailsjs/go/main/App';
+} from '../../wailsjs/go/backend/App';
 
 export function useSeriesDetail(entryId) {
     const [groups, setGroups] = useState([]);

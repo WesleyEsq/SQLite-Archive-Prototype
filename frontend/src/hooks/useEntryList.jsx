@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { 
     GetEntries, UpdateOrder, DeleteEntry, SaveEntry, 
     GetTagsForEntry 
-} from '../../wailsjs/go/main/App';
+} from '../../wailsjs/go/backend/App';
 
 // ADDED libraryId as the first parameter
 export function useEntryList(libraryId, isAddingNew, onAddComplete, refreshTrigger) {

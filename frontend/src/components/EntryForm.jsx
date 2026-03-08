@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { SaveEntry, SetCoverImage } from '../../wailsjs/go/main/App';
+import { SaveEntry, SetCoverImage } from '../../wailsjs/go/backend/App';
 
 export default function EntryForm({ entryToEdit, nextNumber, onSave, onCancel }) {
     const [formData, setFormData] = useState({

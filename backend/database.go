@@ -1,4 +1,4 @@
-package main
+package backend
 
 import (
 	"database/sql"
@@ -49,6 +49,10 @@ type File struct {
 // DB handles all direct database interactions
 type DB struct {
 	conn *sql.DB
+}
+
+func (db *DB) Close() error {
+	return db.conn.Close()
 }
 
 // InitDB opens the connection and ensures the new schema exists

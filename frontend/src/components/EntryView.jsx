@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { DragDropContext, Droppable, Draggable } from '@hello-pangea/dnd';
-import { GetEntries, UpdateOrder, DeleteEntry, GetEntryImage, DownloadBackup} from '../../wailsjs/go/main/App';
+import { GetEntries, UpdateOrder, DeleteEntry, GetEntryImage, DownloadBackup} from '../../wailsjs/go/backend/App';
 
 const BLANK_IMAGE_BASE64 = "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII=";
 

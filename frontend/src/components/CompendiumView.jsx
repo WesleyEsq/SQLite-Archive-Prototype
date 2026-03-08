@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { GetLibrary, UpdateLibrary, SetLibraryCover } from '../../wailsjs/go/main/App';
+import { GetLibrary, UpdateLibrary, SetLibraryCover } from '../../wailsjs/go/backend/App';
 
 export default function CompendiumView({ libraryId }) {
     const [data, setData] = useState(null);

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { renderIcon, iconKeys } from '../../utils/iconMap';
-import { CreateTag, UpdateTag, GetAllTags, DeleteTag } from '../../../wailsjs/go/main/App'; // <--- Import UpdateTag
+import { CreateTag, UpdateTag, GetAllTags, DeleteTag } from '../../../wailsjs/go/backend/App'; // <--- Import UpdateTag
 import '../../styles/tags.css'; 
 // Import Pencil icon for the edit button
 import { Pencil } from 'lucide-react'; 

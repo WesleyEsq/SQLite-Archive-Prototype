@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { renderIcon, iconKeys } from '../utils/iconMap';
-import { CreateTag, GetAllTags, DeleteTag } from '../../wailsjs/go/main/App';
+import { CreateTag, GetAllTags, DeleteTag } from '../../wailsjs/go/backend/App';
 
 export default function TagManager({ onClose }) {
     const [tags, setTags] = useState([]);

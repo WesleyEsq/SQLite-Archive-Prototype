@@ -1,7 +1,7 @@
 import React from 'react';
 import { DragDropContext, Droppable, Draggable } from '@hello-pangea/dnd';
 import ReactMarkdown from 'react-markdown';
-import { ExportLibraryCSV, ImportLegacyCSV, SetCoverImage } from '../../wailsjs/go/main/App';
+import { ExportLibraryCSV, ImportLegacyCSV, SetCoverImage } from '../../wailsjs/go/backend/App';
 import { useEntryList } from '../hooks/useEntryList'; 
 import TagSelectorModal from './TagSelectorModal';   
 import { renderIcon } from '../utils/iconMap';       

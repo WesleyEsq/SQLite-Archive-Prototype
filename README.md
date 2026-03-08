@@ -1,156 +1,173 @@
-# Compendium | Prototipo de sistema de almacenamiento con enfasís en metadatos.
 
-### ¡Te doy la bienvenida!
+# Compendium | Storage system prototype with an emphasis on metadata
 
-El proposito de este proyecto es el desarrollar un Archivero digital completamente local, para la preservación y organización automática de archivos multimedia.
+[Presiona aquí para leer la documentación en español](./spanish_documentation/README.md)
 
-El proyecto esta diseñado para la preservación personal de tanto los archivos como de una gran cantidad de metadatos acerca de ellos. Se basa en la organización de gigantes como Youtube, S3 y Google Drive, solo que completamente de manera local y compacta.
+## Welcome!
 
----
-## Soporte para la visualización de archivos.
+The purpose of this project is to develop a completely local digital Archive for the automatic preservation and organization of multimedia files.
 
-| Medio     |Formatos que pueden ser visualizados| Futuras agregaciones     |
-| ---       |---                                 | ---                      |
-| Audio     |                                    | wav, mp3, AIFF, AAC, OGG |
-| Imagenes  | PNG, JPEG, WebP, GIF, TIFF         | SVG                      |
-| Videos    | MP4, WebM                          |                          |
-| Documentos| PDF, Epub                          | Docx, HTML               |
-| Ebooks    | Epub                               | Secuencias de Imagenes   |
-
-Cualquier otro formato de archivos puede ser almacenado y descargado en el sistema, pero solo se provee soporte para visualizar estos archivos con la interfaz.
-
----
-## Acerca de compendium.
-Este proyecto nace de la necesidad de ir más allá de las simples hojas de cálculo y los marcadores del navegador. Es una aplicación de escritorio robusta, diseñada para ser un "santuario digital" para tu colección personal de medios (Libros, Trabajos de artistas, Series, Novelas Ligeras y más).
-
-Construido sobre la potencia de Go y la flexibilidad de React, este prototipo combina la velocidad de una base de datos embebida con una interfaz moderna estilo "streaming" mediante streaming. Es una estantería digital viva diseñada para la preservación, la portabilidad y la estética.
-
-Los elementos multimedia y los metadatos acerca de ellos son organizados de manera automática en una estructura jerarquica, para facilitar la recolección e integridad de los mismos a gran escala.
+The project is designed for the personal preservation of both the files and a large amount of metadata about them. It is based on the organization of giants like YouTube, S3, and Google Drive, only completely local and compact.
 
 ---
 
-## Metas de este proyecto.
-Se espera continuar con este prototipo con la implementación de las siguientes metas, para permitir un uso práctico del almacenamiento que provee:
+## File Visualization Support
 
-**Metas**
-1. Compatibilidad con almacenamiento personal en la nube de Google Drive y OneDrive
-2. Almacenamientode backups mediante S3
-3. Mejor operabilidad con el sistema operativo para observar multimedia fuera de la aplicación de react con las siguientes herramientas:
-    - Adobe Acrobat
-    - VLC
-4. Funcionalidad para exportar todos los datos de la base de datos en un directorio de manera jerarquica como en el sistema.
-5. Sistema robusto de backups.
-
----
-
-## Estructura del Proyecto
-
-El proyecto sigue la arquitectura estándar de **Wails**, separando claramente la lógica de backend (Go) de la interfaz de usuario (JavaScript/React). A continuación, un resumen de los directorios clave:
-
-* **`root /`**: El corazón del backend.
-* `main.go`: Punto de entrada. Configura la ventana, los assets y el servidor de archivos.
-* `app.go`: El "Controlador". Conecta el frontend con la base de datos y expone métodos a JS.
-* `database.go`: Gestión de la conexión SQLite, migraciones y consultas generales.
-* `media.go`: Lógica específica para el manejo de archivos multimedia (Jerarquía Series -> Volúmenes -> Capítulos).
-
-
-* **`frontend/`**: La interfaz de usuario (SPA construida con Vite + React).
-* **`src/components/`**: Componentes modulares de React.
-* `LibraryGrid.jsx`: La vista de galería estilo "Netflix" con carga diferida (lazy loading).
-* `SeriesDetail.jsx`: La página de detalles, gestión de archivos y metadatos.
-* `EntryList.jsx`: La vista de tabla clásica para gestión rápida y ranking.
-
-
-* **`src/styles/`**: Sistema de CSS modular.
-* Dividido en archivos específicos (`layout.css`, `library.css`, `variables.css`) para mantener el código limpio y mantenible.
-
-
-* **`wailsjs/`**: Puente autogenerado entre Go y JavaScript. Aquí residen las promesas que conectan ambos mundos.
-
-
-* **`build/`**: Artefactos de compilación y configuración de empaquetado para Windows/Mac/Linux.
-* **`compendium.db`**: (Generado) El archivo único que contiene toda tu base de datos y archivos guardados.
-
----
-
-## Propósito y Filosofía del Proyecto
-
-El propósito de GoGL Compendium es resolver el problema de la **preservación digital** con una experiencia de usuario superior.
-
-El proyecto mantiene como su principal meta a la **compactabilidad**, proveyendo una solución altamente escalable sin la necesidad de contenedores, servidores de bases de datos, pods u servicios por parte de terceros, siendo una alternativa segura para un usuario.
-
-
-### 1. Preservación Local ("Local-First")
-
-En la era digital, el contenido en la nube es efímero. Series favoritas pueden desaparecer por licencias o cierres de sitios web. GoGL apuesta por el almacenamiento local:
-
-* **Base de Datos como Sistema de Archivos:** A diferencia de los gestores tradicionales que solo guardan rutas de archivos, se ingestan los archivos (PDF, EPUB, Imágenes) directamente en la base de datos SQLite.
-* **Portabilidad Total:** Al residir todo en un único archivo `.db`, hacer una copia de seguridad de tu biblioteca entera es tan simple como copiar un archivo.
-
-### 2. Estética y Funcionalidad
-
-Las hojas de cálculo son eficientes, pero aburridas. GoGL busca emular la experiencia de las plataformas de streaming modernas:
-
-* **Navegación Visual:** Portadas grandes, carga progresiva y diseño de cuadrícula.
-* **Jerarquía de Medios:** Entiende que una obra no es un solo archivo. Soporta estructuras complejas: *Serie → Temporadas/Volúmenes → Episodios/Capítulos*.
-* **Organización Flexible:** Permite clasificar contenido por ranking (Tier Lists), orden numérico o búsqueda instantánea.
-
-### 3. Privacidad y Ética
-
-Este es un software de **uso estrictamente personal** para la organización de archivos locales. No se conecta a ninguna red ni comparte sus datos con otros usuarios. Es una herramienta pasiva para organizar lo que el usuario ya posee, actuando como una estanteria digital personal y segura. 
-
-Por lo que se han tomado decisiones para garantizar una mejor experiencia local en una máquina, a coste de una arquitectura hostíl contra el streaming de los datos a otros dispositivos.
-
----
-# Arquitectura y Especificaciones Técnicas
-
-Compendium es una aplicación híbrida de alto rendimiento. Esta sección detalla las decisiones de ingeniería, el esquema de datos y los patrones de diseño utilizados para lograr una experiencia fluida manejando archivos multimedia pesados.
-
-## 1. Stack Tecnológico
-
-La elección de tecnologías prioriza tres pilares: **Portabilidad** (un solo binario), **Rendimiento** (bajo consumo de RAM) y **Modernidad** (UI reactiva).
-
-| Capa | Tecnología | Justificación |
+| Medium | Formats that can be visualized | Future additions |
 | --- | --- | --- |
-| **Core / Backend** | **Go (Golang) 1.21+** | Ofrece tipado estático, concurrencia nativa y compilación a código máquina sin dependencias externas (Static linking). |
-| **Frontend** | **React 18 + Vite** | Ecosistema robusto para SPAs. Vite proporciona un tiempo de compilación instantáneo y React gestiona el estado complejo de la UI. |
-| **Bridge (Puente)** | **Wails v2** | Alternativa ligera a Electron. Utiliza el motor de renderizado nativo del OS (WebView2 en Windows, WebKit en Mac) reduciendo drásticamente el tamaño del ejecutable y el uso de RAM. |
-| **Base de Datos** | **SQLite (ModernC)** | Versión de SQLite transpilada a Go puro (sin CGO). Elimina la necesidad de instalar compiladores de C (GCC) en Windows, facilitando la compilación cruzada. |
-| **Estilos** | **CSS Modules (Custom)** | Sistema de diseño propio sin frameworks pesados (como Tailwind o Bootstrap) para control total visual. |
+| Audio |  | wav, mp3, AIFF, AAC, OGG |
+| Images | PNG, JPEG, WebP, GIF, TIFF | SVG |
+| Videos | MP4, WebM |  |
+| Documents | PDF, Epub | Docx, HTML |
+| Ebooks | Epub | Sequences of images |
+
+Any other file format can be stored and downloaded in the system, but support is only provided to visualize these files with the interface.
 
 ---
 
-## 2. Diseño de Base de Datos (Schema)
+## About Compendium
 
-El corazón del proyecto es su base de datos **SQLite**. A diferencia de aplicaciones tradicionales que guardan rutas de archivos (`C:/Users/...`), Compendium almacena los archivos binarios (Imágenes, PDFs, EPUBs) directamente dentro de la base de datos como **BLOBS**.
+This project is born from the need to go beyond simple spreadsheets and browser bookmarks. It is a robust desktop application designed to be a "digital sanctuary" for your personal media collection (Books, Artworks, Series, Light Novels, and more).
 
-### Estrategia de "Todo en Uno"
+Built on the power of Go and the flexibility of React, this prototype combines the speed of an embedded database with a modern "streaming-style" interface. It is a living digital bookshelf designed for preservation, portability, and aesthetics.
 
-* **Ventaja:** Portabilidad absoluta. Mover tu colección a otra PC implica copiar un solo archivo `.db`.
-* **Desafío:** El rendimiento de lectura es inferior al uso del sistema de archivos para el almacenamiento de blobs mayores 100Kb.
-* **Solución:** Implementación de un servidor sidecar en Go para la lectura y obtención  de objetos multimedia en la base de datos. Funcionando de manera muy simil a los servicios de S3.
-
-
-## 3. Wails y la relación entre Go y React
-
-La comunicación entre Go y JavaScript es asíncrona y segura, gestionada a través de `wailsjs`.
-
-* **Exportación de Métodos:** El struct `App` en `app.go` actúa como el controlador principal. Cualquier método público (ej: `GetEntries()`) se expone automáticamente a JavaScript como una Promesa.
-* **Manejo de Tipos:** Wails genera automáticamente definiciones de TypeScript (`models.ts`) basadas en los structs de Go, garantizando que el frontend sepa exactamente qué datos esperar.
-
-**Flujo de Datos:**
-
-> `UI (React)` invoca `SaveMediaAsset()` **➜** `Wails Bridge` serializa JSON **➜** `Go Controller` decodifica Base64 **➜** `SQLite` escribe BLOB **➜** Respuesta al UI.
+Multimedia elements and the metadata about them are automatically organized into a hierarchical structure to facilitate their collection and integrity on a large scale.
 
 ---
 
-## 4. Modularidad del Frontend
+## How to compile the project
 
-El código React demanda una gran especialización en cuanto a los estilos de cada componente, se organizan según cada elemento reutilizable en la estructura del proyecto. Pueden compartir estilos entre sí o usar un estilo global definido para todo el proyecto. Para el proposito de este proyecto se tiene la siguiente dispocisión de los elementos de UI:
+It is expected that a flatpak will be developed for this project for its distribution once it is complete. For now, it is possible to compile it manually.
+**The following is required:**
 
-* **CSS Modular:** Los estilos se dividen por responsabilidad (`layout.css`, `library.css`, `modals.css`).
-* **Componentes Atómicos:** `LibraryGrid`, `SeriesDetail` y `EntryList` funcionan de manera aislada, recibiendo datos solo a través de *props*, facilitando el testing y la depuración.
+1. Install a Go version higher than 1.20
+2. Install the Wails library
+3. Run the following command inside this repository directory:
+
+* `wails dev`
+
+
+
+*note: in case there is an error due to the use of webkit with Wails, you must specify the webkit version installed on the operating system. In the case of Fedora KDE 43, for example, the necessary command is `wails dev -tags webkit2gtk-4.1*`
 
 ---
 
-Esta documentación técnica requiere ser expandida para futuras iteraciones de este prototipo.
+## Goals of this project
+
+It is expected to continue with this prototype by implementing the following goals to allow practical use of the storage it provides.
+
+**The goals are as follows:**
+
+1. Compatibility with Google Drive and OneDrive personal cloud storage.
+2. Backup storage via S3.
+3. Better operability with the operating system to view media outside the React application using the following tools:
+    * Adobe Acrobat
+    * VLC
+
+4. Functionality to export all database data into a hierarchical directory just like in the system.
+5. Robust backup system.
+
+---
+
+## Project Structure
+
+The project follows the standard **Wails** architecture, clearly separating the backend logic (Go) from the user interface (JavaScript/React). Below is a summary of the key directories:
+
+* **`root /`**: The heart of the backend.
+* `main.go`: Entry point. Configures the window, assets, and file server.
+* `app.go`: The "Controller". Connects the frontend with the database and exposes methods to JS.
+* `database.go`: SQLite connection management, migrations, and general queries.
+* `media.go`: Specific logic for handling multimedia files (Hierarchy: Series -> Volumes -> Chapters).
+* **`frontend/`**: The user interface (SPA built with Vite + React).
+* **`src/components/`**: Modular React components.
+* `LibraryGrid.jsx`: The "Netflix-style" gallery view with lazy loading.
+* `SeriesDetail.jsx`: The details page, file and metadata management.
+* `EntryList.jsx`: The classic table view for quick management and ranking.
+* **`src/styles/`**: Modular CSS system.
+* Divided into specific files (`layout.css`, `library.css`, `variables.css`) to keep the code clean and maintainable.
+* **`wailsjs/`**: Auto-generated bridge between Go and JavaScript. Here reside the promises that connect both worlds.
+* **`build/`**: Compilation artifacts and packaging configuration for Windows/Mac/Linux.
+* **`compendium.db`**: (Generated) The single file that contains your entire database and saved files.
+
+---
+
+## Purpose and Philosophy of the Project
+
+The purpose of Compendium is to solve the problem of **digital preservation** with a superior user experience.
+
+The project maintains **compactness** as its main goal, providing a highly scalable solution without the need for containers, database servers, pods, or third-party services, making it a secure alternative for a user.
+
+### 1. Local-First Preservation
+
+In the digital age, cloud content is ephemeral. Favorite series can disappear due to licensing or website closures. This project bets on local storage:
+
+* **Database as a File System:** Unlike traditional managers that only save file paths, files (PDF, EPUB, Images) are ingested directly into the SQLite database.
+* **Total Portability:** Because everything resides in a single `.db` file, backing up your entire library is as simple as copying one file.
+
+### 2. Aesthetics and Functionality
+
+Spreadsheets are efficient, but boring. The goal is to emulate the experience of modern streaming platforms:
+
+* **Visual Navigation:** Large covers, progressive loading, and a grid layout.
+* **Media Hierarchy:** Understands that a work is not a single file. Supports complex structures: *Series → Seasons/Volumes → Episodes/Chapters*.
+* **Flexible Organization:** Allows sorting content by ranking (Tier Lists), numerical order, or instant search.
+
+### 3. Privacy and Ethics
+
+This is software strictly for **personal use** to organize local files. It does not connect to any network or share its data with other users. It is a passive tool to organize what the user already owns, acting as a secure and personal digital bookshelf.
+
+Therefore, decisions have been made to guarantee a better local experience on a machine, at the cost of a hostile architecture against streaming data to other devices.
+
+---
+
+## Architecture and Technical Specifications
+
+Compendium is a high-performance hybrid application. This section details the engineering decisions, data schema, and design patterns used to achieve a smooth experience handling heavy multimedia files.
+
+### 1. Technology Stack
+
+The choice of technologies prioritizes three pillars: **Portability** (a single binary), **Performance** (low RAM usage), and **Modernity** (reactive UI).
+
+| Layer | Technology | Justification |
+| --- | --- | --- |
+| **Core / Backend** | **Go (Golang) 1.21+** | Offers static typing, native concurrency, and compilation to machine code without external dependencies (Static linking). |
+| **Frontend** | **React 18 + Vite** | Robust ecosystem for SPAs. Vite provides instant compilation time, and React manages complex UI state. |
+| **Bridge** | **Wails v2** | Lightweight alternative to Electron. Uses the OS native rendering engine (WebView2 on Windows, WebKit on Mac), drastically reducing executable size and RAM usage. |
+| **Database** | **SQLite (ModernC)** | Version of SQLite transpiled to pure Go (no CGO). Eliminates the need to install C compilers (GCC) on Windows, facilitating cross-compilation. |
+| **Styles** | **CSS Modules (Custom)** | Custom design system without heavy frameworks (like Tailwind or Bootstrap) for total visual control. |
+
+---
+
+### 2. Database Design (Schema)
+
+The heart of the project is its **SQLite** database. Unlike traditional applications that save file paths (`C:/Users/...`), Compendium stores the binary files (Images, PDFs, EPUBs) directly inside the database as **BLOBS**.
+
+### "All in One" Strategy
+
+* **Advantage:** Absolute portability. Moving your collection to another PC means copying a single `.db` file.
+* **Challenge:** Read performance is inferior to using the file system for storing blobs larger than 100Kb.
+* **Solution:** Implementation of a Go sidecar server for reading and fetching multimedia objects in the database. Works very similarly to S3 services.
+
+## 3. Wails and the relationship between Go and React
+
+Communication between Go and JavaScript is asynchronous and secure, managed through `wailsjs`.
+
+* **Method Exporting:** The `App` struct in `app.go` acts as the main controller. Any public method (e.g., `GetEntries()`) is automatically exposed to JavaScript as a Promise.
+* **Type Handling:** Wails automatically generates TypeScript definitions (`models.ts`) based on the Go structs, ensuring the frontend knows exactly what data to expect.
+
+**Data Flow:**
+
+> `UI (React)` invokes `SaveMediaAsset()` **➜** `Wails Bridge` serializes JSON **➜** `Go Controller` decodes Base64 **➜** `SQLite` writes BLOB **➜** Response to the UI.
+
+---
+
+## 4. Frontend Modularity
+
+React code demands great specialization in terms of the styles of each component, they are organized according to each reusable element in the project structure. They can share styles with each other or use a global style defined for the whole project. For the purpose of this project, we have the following UI element disposition:
+
+* **Modular CSS:** Styles are divided by responsibility (`layout.css`, `library.css`, `modals.css`).
+* **Atomic Components:** `LibraryGrid`, `SeriesDetail`, and `EntryList` work in isolation, receiving data only through *props*, facilitating testing and debugging.
+
+---
+
+This technical documentation requires expansion for future iterations of this prototype.

@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react';
-import { GetEntries } from '../../wailsjs/go/main/App';
+import { GetEntries } from '../../wailsjs/go/backend/App';
 import { Search, ChevronLeft, ChevronRight } from 'lucide-react';
 import { Virtuoso, VirtuosoGrid } from 'react-virtuoso';
 

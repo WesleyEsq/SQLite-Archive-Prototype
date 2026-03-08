@@ -1,8 +1,7 @@
-package main
+package backend
 
 import (
 	"crypto/md5"
-	"database/sql"
 	"fmt"
 	"net/http"
 	"strconv"
@@ -10,10 +9,10 @@ import (
 )
 
 type ImageHandler struct {
-	db *sql.DB
+	db *DB 
 }
 
-func NewImageHandler(db *sql.DB) *ImageHandler {
+func NewImageHandler(db *DB) *ImageHandler { 
 	return &ImageHandler{db: db}
 }
 
@@ -47,11 +46,12 @@ func (h *ImageHandler) AssetMiddleware(next http.Handler) http.Handler {
 		// --- 1. Handle Library Covers ---
 		if strings.HasPrefix(r.URL.Path, "/images/library/") {
 			idStr := strings.TrimPrefix(r.URL.Path, "/images/library/")
-			idStr = strings.Split(idStr, "?")[0] // Strip any legacy frontend cache-busters
+			idStr = strings.Split(idStr, "?")[0] 
 			libID, _ := strconv.Atoi(idStr)
 
 			var imgData []byte
-			err := h.db.QueryRow("SELECT cover_image FROM libraries WHERE id = ?", libID).Scan(&imgData)
+			// 4. ADD .conn HERE to access the underlying connection
+			err := h.db.conn.QueryRow("SELECT cover_image FROM libraries WHERE id = ?", libID).Scan(&imgData) 
 			if err == nil && len(imgData) > 0 {
 				serveWithETag(imgData)
 				return
@@ -63,7 +63,7 @@ func (h *ImageHandler) AssetMiddleware(next http.Handler) http.Handler {
 		// --- 2. Handle Entry Covers ---
 		if strings.HasPrefix(r.URL.Path, "/images/") {
 			idStr := strings.TrimPrefix(r.URL.Path, "/images/")
-			idStr = strings.Split(idStr, "?")[0] // Strip any legacy frontend cache-busters
+			idStr = strings.Split(idStr, "?")[0] 
 			entryID, err := strconv.Atoi(idStr)
 
 			if err != nil {
@@ -72,7 +72,7 @@ func (h *ImageHandler) AssetMiddleware(next http.Handler) http.Handler {
 			}
 
 			var imgData []byte
-			err = h.db.QueryRow("SELECT image_data FROM entry_covers WHERE entry_id = ?", entryID).Scan(&imgData)
+			err = h.db.conn.QueryRow("SELECT image_data FROM entry_covers WHERE entry_id = ?", entryID).Scan(&imgData)
 			if err == nil && len(imgData) > 0 {
 				serveWithETag(imgData)
 				return
