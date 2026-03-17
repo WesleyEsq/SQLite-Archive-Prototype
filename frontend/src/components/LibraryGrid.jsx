@@ -1,123 +1,32 @@
-import React, { useState, useEffect, useMemo, useRef } from 'react';
-import { GetEntries } from '../../wailsjs/go/backend/App';
-import { Search, ChevronLeft, ChevronRight } from 'lucide-react';
+// frontend/src/components/LibraryGrid.jsx
+import React from 'react';
 import { Virtuoso, VirtuosoGrid } from 'react-virtuoso';
+import { ChevronLeft, ChevronRight } from 'lucide-react';
 
-// ADDED libraryId prop here
-export default function LibraryGrid({ libraryId, onSelectSeries }) {
-    const [allEntries, setAllEntries] = useState([]);
-    const [searchQuery, setSearchQuery] = useState("");
-    const [sortBy, setSortBy] = useState("number");
-    
-    // 1. FIX SCROLLING: We need a ref specifically for the DOM element
-    const scrollerRef = useRef(null);
+// Sub-components (Make sure you created these from the previous step!)
+import LibraryToolbar from './library-grid/LibraryToolbar';
+import LibraryCard from './library-grid/LibraryCard';
 
-    // 2. FIX ANIMATION: Keep track of images that have already loaded once
-    const loadedCache = useRef(new Set());
-
-    // --- Fetch & Sort Logic ---
-    useEffect(() => {
-        // NOW PASSING THE INTEGER ID INSTEAD OF AN EMPTY STRING
-        if (libraryId) {
-            GetEntries(libraryId)
-                .then(res => setAllEntries(res || []))
-                .catch(err => console.error("Error fetching entries:", err));
-        }
-    }, [libraryId]);
-
-    const filteredEntries = useMemo(() => {
-        let result = allEntries;
-        if (searchQuery) {
-            const lowerQ = searchQuery.toLowerCase();
-            result = result.filter(e => 
-                (e.title && e.title.toLowerCase().includes(lowerQ)) || 
-                (e.comment && e.comment.toLowerCase().includes(lowerQ))
-            );
-        }
-        switch (sortBy) {
-            case 'rank': result = [...result].sort((a, b) => (a.rank || "").localeCompare(b.rank || "")); break;
-            case 'title': result = [...result].sort((a, b) => (a.title || "").localeCompare(b.title || "")); break;
-            default: result = [...result].sort((a, b) => Number(a.number) - Number(b.number));
-        }
-        return result;
-    }, [allEntries, searchQuery, sortBy]);
-
-    // --- CARD COMPONENT ---
-    const Card = ({ entry }) => {
-        // Check if this image was loaded previously
-        const seenBefore = loadedCache.current.has(entry.id);
-        const [isLoaded, setIsLoaded] = useState(seenBefore);
-
-        return (
-            <div className="library-card" onClick={() => onSelectSeries(entry)}>
-                <div className="library-card-image-wrapper">
-                    <div className="card-accent-bar"></div>
-                    <img 
-                        src={`/images/${entry.id}`} 
-                        alt={entry.title} 
-                        loading="lazy"
-                        // Apply 'instant' class if seen before to skip animation
-                        className={`library-cover-img ${isLoaded ? 'loaded' : ''} ${seenBefore ? 'instant' : ''}`}
-                        onLoad={(e) => {
-                            // Mark as seen in the global cache
-                            loadedCache.current.add(entry.id);
-                            setIsLoaded(true);
-                        }}
-                        onError={(e) => {
-                            e.target.style.display = 'none'; 
-                            e.target.parentNode.classList.add('broken');
-                        }}
-                    />
-                    <div className="library-card-overlay">
-                        <span className={`rank-badge rank-${entry.rank ? entry.rank.charAt(0) : 'U'}`}>{entry.rank}</span>
-                    </div>
-                </div>
-                <div className="library-card-title">{entry.title}</div>
-            </div>
-        );
-    };
-
-    // --- CAROUSEL SCROLL HANDLER ---
-    const scrollCarousel = (direction) => {
-        if (scrollerRef.current) {
-            // Now we are calling scrollBy on the actual DIV, so it works perfectly
-            scrollerRef.current.scrollBy({ 
-                left: direction === 'left' ? -800 : 800, 
-                behavior: 'smooth' 
-            });
-        }
-    };
-
-    const isSearching = searchQuery.length > 0;
-
+export default function LibraryGrid({ 
+    // These all come from the Controller now!
+    searchQuery, setSearchQuery, sortBy, setSortBy, 
+    filteredEntries, isSearching, scrollerRef, loadedCache, 
+    scrollCarousel, onSelectSeries 
+}) {
     return (
         <div className="library-wrapper">
-            <div className="library-header-box">
-                <div className="library-toolbar">
-                    <div className="search-input-wrapper">
-                        <input 
-                            type="text" 
-                            placeholder="Search Library..." 
-                            value={searchQuery}
-                            onChange={(e) => setSearchQuery(e.target.value)} 
-                        />
-                        <button className="search-circle-btn"><Search size={18} /></button>
-                    </div>
-
-                    <div className="sort-controls">
-                        <label>Sort by:</label>
-                        <select value={sortBy} onChange={(e) => setSortBy(e.target.value)}>
-                            <option value="number">Default</option>
-                            <option value="rank">Rank</option>
-                            <option value="title">Title</option>
-                        </select>
-                    </div>
-                </div>
-            </div>
+            {/* The Toolbar handles the Search and Sort UI */}
+            <LibraryToolbar 
+                searchQuery={searchQuery} 
+                setSearchQuery={setSearchQuery} 
+                sortBy={sortBy} 
+                setSortBy={setSortBy} 
+            />
 
             <div className="library-content-area">
                 {isSearching ? (
                     <div style={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
+                        {/* SEARCH RESULTS VIEW */}
                         <h3 className="section-title" style={{ paddingLeft: '30px', marginTop: '10px' }}>
                             Search Results ({filteredEntries.length})
                         </h3>
@@ -129,27 +38,21 @@ export default function LibraryGrid({ libraryId, onSelectSeries }) {
                             totalCount={filteredEntries.length}
                             components={{
                                 List: React.forwardRef(({ style, children, ...props }, ref) => (
-                                    <div
-                                        ref={ref}
-                                        {...props}
-                                        className="virtuoso-grid-list"
-                                        style={{
-                                            ...style,
-                                        }}
-                                    >
+                                    <div ref={ref} {...props} className="virtuoso-grid-list" style={{ ...style }}>
                                         {children}
                                     </div>
                                 ))
                             }}
                             itemContent={(index, entry) => (
                                 <div style={{ height: '320px', width: '100%' }}>
-                                    <Card entry={entry} />
+                                    <LibraryCard entry={entry} onSelectSeries={onSelectSeries} loadedCache={loadedCache} />
                                 </div>
                             )}
                         />
                     </div>
                 ) : (
                     <div className="category-row">
+                        {/* CAROUSEL VIEW */}
                         <h3 className="section-title">All Library Entries <span className="count-badge">{filteredEntries.length}</span></h3>
                         
                         <div className="carousel-wrapper" style={{ height: 380, position: 'relative' }}>
@@ -165,7 +68,7 @@ export default function LibraryGrid({ libraryId, onSelectSeries }) {
                                 itemContent={(_, entry) => (
                                     <div style={{ width: 240, height: '100%', padding: '10px' }}>
                                         <div style={{ height: 320 }}>
-                                            <Card entry={entry} />
+                                            <LibraryCard entry={entry} onSelectSeries={onSelectSeries} loadedCache={loadedCache} />
                                         </div>
                                     </div>
                                 )}

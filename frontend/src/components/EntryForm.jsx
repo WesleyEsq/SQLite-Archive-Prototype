@@ -1,46 +1,8 @@
-import React, { useState, useEffect } from 'react';
-import { SaveEntry, SetCoverImage } from '../../wailsjs/go/backend/App';
+import React from 'react';
 
-export default function EntryForm({ entryToEdit, nextNumber, onSave, onCancel }) {
-    const [formData, setFormData] = useState({
-        id: 0, 
-        number: nextNumber, 
-        title: '', 
-        comment: '', 
-        rank: '', 
-        description: ''
-    });
-
-    useEffect(() => {
-        if (entryToEdit) {
-            const { image, backup, backupName, ...cleanData } = entryToEdit;
-            setFormData(cleanData);
-        }
-    }, [entryToEdit]);
-
-    const handleChange = (e) => setFormData({ ...formData, [e.target.name]: e.target.value });
-
-    const handleUpdateCover = async () => {
-        if (formData.id) {
-            try {
-                await SetCoverImage(formData.id);
-                // Trigger a re-render of the image by adding a timestamp query
-                setFormData({ ...formData, _t: Date.now() }); 
-            } catch (err) {
-                console.error("Failed to update cover:", err);
-            }
-        }
-    };
-
-    const handleSubmit = () => {
-        if (!formData.title) return alert("Title required");
-        
-        // Pass only the lightweight text data to Go
-        SaveEntry(formData)
-            .then(() => onSave())
-            .catch(err => alert("Error saving entry: " + err));
-    };
-
+export default function EntryForm({ 
+    entryToEdit, formData, handleChange, handleUpdateCover, handleSubmit, onCancel 
+}) {
     return (
         <div className="sidebar-form">
             <h2>{entryToEdit ? `Edit #${formData.number}` : "Add New Entry"}</h2>

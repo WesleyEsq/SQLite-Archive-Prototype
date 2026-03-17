@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { GetAllTags, UpdateEntryTags } from '../../wailsjs/go/backend/App';
-import { renderIcon } from '../utils/iconMap';
+import { GetAllTags, UpdateEntryTags } from '../../../wailsjs/go/backend/App';
+import { renderIcon } from '../../utils/iconMap';
 import { X, Check } from 'lucide-react';
 
 export default function TagSelectorModal({ entryId, currentTags, onClose, onSave }) {

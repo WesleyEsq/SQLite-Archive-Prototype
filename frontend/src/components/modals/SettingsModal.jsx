@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import TagSettings from './TagSettings';
+import TagSettings from '../settings/TagSettings';
 // Import icons for the sidebar
 import { Tag, Database, Settings as GearIcon, Info } from 'lucide-react';
 

@@ -6,7 +6,10 @@ import EntryList from './components/EntryList';
 import CompendiumView from './components/CompendiumView';
 import LibraryGrid from './components/LibraryGrid';
 import SeriesDetail from './components/SeriesDetail';
-import SettingsModal from './components/settings/SettingsModal';
+import SettingsModal from './components/modals/SettingsModal';
+import EntryListController from './controllers/EntryListController';
+import LibraryGridController from './controllers/LibraryGridController';
+import SeriesDetailController from './controllers/SeriesDetailController';
 
 // --- Icons ---
 import { 
@@ -92,7 +95,7 @@ function App() {
                 {view === 'about' && <CompendiumView libraryId={activeLibraryId} />}
                 
                 {view === 'list' && (
-                    <EntryList 
+                    <EntryListController // 2. Update the tag here
                         libraryId={activeLibraryId}
                         isAddingNew={isAddingNew}
                         onAddComplete={() => setIsAddingNew(false)}
@@ -101,14 +104,14 @@ function App() {
                 )}
                 
                 {view === 'library' && (
-                    <LibraryGrid 
+                    <LibraryGridController // Update tag
                         libraryId={activeLibraryId} 
                         onSelectSeries={handleSelectSeries} 
                     />
                 )}
                 
                 {view === 'series_detail' && selectedSeries && (
-                    <SeriesDetail 
+                    <SeriesDetailController // Update tag
                         entry={selectedSeries} 
                         onBack={() => setView('library')} 
                     />
