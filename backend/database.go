@@ -3,6 +3,7 @@ package backend
 import (
 	"database/sql"
 	"fmt"
+	"strings"
 
 	_ "modernc.org/sqlite"
 )
@@ -38,12 +39,13 @@ type GroupSet struct {
 }
 
 type File struct {
-	ID         int    `json:"id"`
-	GroupSetID int    `json:"groupset_id"`
-	Filename   string `json:"filename"`
-	MimeType   string `json:"mime_type"`
-	SizeBytes  int64  `json:"file_size"`
-	SortOrder  int    `json:"sort_order"`
+	ID          int    `json:"id"`
+	GroupSetID  int    `json:"groupset_id"`
+	Filename    string `json:"filename"`
+	MimeType    string `json:"mime_type"`
+	SizeBytes   int64  `json:"file_size"`
+	SortOrder   int    `json:"sort_order"`
+	VirtualPath string `json:"virtual_path"`
 }
 
 // DB handles all direct database interactions
@@ -75,6 +77,31 @@ func InitDB(path string) (*DB, error) {
 		return nil, err
 	}
 
+	// 3. IDEMPOTENT MIGRATION: Add virtual_path to existing files table
+	_, err = db.Exec("ALTER TABLE files ADD COLUMN virtual_path TEXT DEFAULT '/';")
+	if err != nil {
+		// Ignore the error ONLY if it's complaining that the column already exists
+		if !strings.Contains(err.Error(), "duplicate column name") {
+			return nil, fmt.Errorf("failed to add virtual_path column: %w", err)
+		}
+	}
+
+	// ==========================================
+	// 4. DATABASE DOCTOR: Self-Healing Routines
+	// ==========================================
+
+	// A. Purge Ghost BLOBs (Orphans in the objects table)
+	_, _ = db.Exec("DELETE FROM objects WHERE file_id NOT IN (SELECT id FROM files);")
+
+	// B. Purge Ghost Links (Orphans in the junction table)
+	_, _ = db.Exec("DELETE FROM groupset_files WHERE file_id NOT IN (SELECT id FROM files);")
+
+	// C. Repair the AUTOINCREMENT Sequence
+	// 1. Ensure the sequence row exists for the files table
+	_, _ = db.Exec("INSERT INTO sqlite_sequence (name, seq) SELECT 'files', 0 WHERE NOT EXISTS (SELECT 1 FROM sqlite_sequence WHERE name = 'files');")
+
+	// 2. Force the sequence to securely jump past the highest ID in the vault
+	_, _ = db.Exec("UPDATE sqlite_sequence SET seq = (SELECT COALESCE(MAX(id), 0) FROM files) WHERE name = 'files';")
 	return &DB{conn: db}, nil
 }
 
@@ -116,12 +143,10 @@ func createTables(db *sql.DB) error {
 		// 4. File Metadata (Lightning fast to query)
 		`CREATE TABLE IF NOT EXISTS files (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
-            groupset_id INTEGER NOT NULL,
             filename TEXT,
             mime_type TEXT,
             size_bytes INTEGER,
-            sort_order INTEGER DEFAULT 0,
-            FOREIGN KEY(groupset_id) REFERENCES group_sets(id) ON DELETE CASCADE
+			virtual_path TEXT DEFAULT '/'
         );`,
 
 		// 5. The Pure-SQLite Object Store (1:1 with files)
@@ -157,19 +182,19 @@ func createTables(db *sql.DB) error {
 
 		// 9. Many-to-Many Vault Link Table
 		`CREATE TABLE IF NOT EXISTS groupset_files (
-            groupset_id INTEGER NOT NULL,
-            file_id INTEGER NOT NULL,
+            groupset_id INTEGER,
+            file_id INTEGER,
             sort_order INTEGER DEFAULT 0,
             PRIMARY KEY (groupset_id, file_id),
             FOREIGN KEY(groupset_id) REFERENCES group_sets(id) ON DELETE CASCADE,
             FOREIGN KEY(file_id) REFERENCES files(id) ON DELETE CASCADE
         );`,
 
-		// 10. IDEMPOTENT Migration query
-		`INSERT INTO groupset_files (groupset_id, file_id, sort_order)
-        SELECT groupset_id, id, sort_order FROM files
-        WHERE groupset_id IS NOT NULL
-        ON CONFLICT(groupset_id, file_id) DO NOTHING;`,
+		// 11. Category Tags
+		`CREATE TABLE IF NOT EXISTS category_tags (
+			tag_id INTEGER PRIMARY KEY,
+			FOREIGN KEY(tag_id) REFERENCES tags(id) ON DELETE CASCADE
+		);`,
 	}
 
 	for _, query := range queries {
@@ -402,4 +427,30 @@ func (db *DB) UpdateLibrary(lib Library) error {
 func (db *DB) UpdateLibraryCover(id int, data []byte) error {
 	_, err := db.conn.Exec("UPDATE libraries SET cover_image = ? WHERE id = ?", data, id)
 	return err
+}
+
+// GetEntriesByTag fetches all entries in a specific library that share a specific tag
+func (db *DB) GetEntriesByTag(libraryID int, tagID int) ([]Entry, error) {
+	query := `
+		SELECT e.id, e.library_id, e.title, COALESCE(e.description, ''), e.number, COALESCE(e.comment, ''), COALESCE(e.rank, ''), COALESCE(e.text_alignment, 'justify')
+		FROM entries e
+		INNER JOIN entry_tags et ON e.id = et.entry_id
+		WHERE e.library_id = ? AND et.tag_id = ?
+		ORDER BY CAST(e.number AS INTEGER) ASC
+	`
+	rows, err := db.conn.Query(query, libraryID, tagID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var entries []Entry
+	for rows.Next() {
+		var e Entry
+		if err := rows.Scan(&e.ID, &e.LibraryID, &e.Title, &e.Description, &e.Number, &e.Comment, &e.Rank, &e.TextAlignment); err != nil {
+			return nil, err
+		}
+		entries = append(entries, e)
+	}
+	return entries, nil
 }

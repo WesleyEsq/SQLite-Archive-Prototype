@@ -23,3 +23,14 @@
     transform: scale(1.1) rotate(90deg); /* Playful spin */
     background: #c9184a;
 }
+
+/* src/styles/4-views/entry-list.css */
+
+.list-action-bar {
+    display: flex;
+    justify-content: space-between; /* Pushes child 1 to left, child 2 to right */
+    align-items: center;            /* Keeps them vertically centered */
+    width: 100%;
+    margin-bottom: 20px;            /* Gives breathing room above the table */
+    padding: 10px 0;
+}

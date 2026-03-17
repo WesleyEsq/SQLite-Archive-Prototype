@@ -123,8 +123,6 @@ export default function EntryList({
                                                                 />
                                                                 <div className="details-text">
                                                                     <EntryTagDisplay entryId={entry.id} entryTags={entryTags} setTagModalTarget={setTagModalTarget} />
-                                                                    
-                                                                    <h4 style={{ color: 'var(--ui-header)', marginTop: '5px' }}>Description</h4>
                                                                     <div className="markdown-content" style={{ textAlign: entry.textAlignment || 'justify' }}>
                                                                         <ReactMarkdown>{entry.description || "*No description provided.*"}</ReactMarkdown>
                                                                     </div>

@@ -7,7 +7,9 @@ export function CreateGroupSet(arg1:number,arg2:string,arg3:string):Promise<void
 
 export function CreateLibrary(arg1:string,arg2:string):Promise<void>;
 
-export function CreateTag(arg1:string,arg2:string,arg3:string):Promise<void>;
+export function CreateTag(arg1:string,arg2:string,arg3:string,arg4:boolean):Promise<void>;
+
+export function CreateVaultFolder(arg1:string):Promise<void>;
 
 export function DeleteEntry(arg1:number):Promise<void>;
 
@@ -17,13 +19,21 @@ export function DeleteGroupSet(arg1:number):Promise<void>;
 
 export function DeleteTag(arg1:number):Promise<void>;
 
+export function DeleteVaultFile(arg1:number):Promise<void>;
+
+export function DeleteVaultFolder(arg1:string):Promise<void>;
+
 export function ExportLibraryCSV(arg1:number):Promise<string>;
 
 export function ExportMediaAsset(arg1:number,arg2:string):Promise<void>;
 
 export function GetAllTags():Promise<Array<backend.Tag>>;
 
+export function GetAllVaultFiles():Promise<Array<backend.File>>;
+
 export function GetEntries(arg1:number):Promise<Array<backend.Entry>>;
+
+export function GetEntriesByTag(arg1:number,arg2:number):Promise<Array<backend.Entry>>;
 
 export function GetFiles(arg1:number):Promise<Array<backend.File>>;
 
@@ -38,6 +48,14 @@ export function GetTagsForEntry(arg1:number):Promise<Array<backend.Tag>>;
 export function ImportFile(arg1:number):Promise<void>;
 
 export function ImportLegacyCSV(arg1:number):Promise<string>;
+
+export function MoveVaultFile(arg1:number,arg2:string):Promise<void>;
+
+export function PromptAndUploadVaultFile(arg1:string):Promise<void>;
+
+export function RenameVaultFile(arg1:number,arg2:string):Promise<void>;
+
+export function RenameVaultFolder(arg1:string,arg2:string):Promise<void>;
 
 export function SaveEntry(arg1:backend.Entry):Promise<void>;
 
@@ -55,4 +73,4 @@ export function UpdateLibrary(arg1:backend.Library):Promise<void>;
 
 export function UpdateOrder(arg1:Array<backend.Entry>):Promise<void>;
 
-export function UpdateTag(arg1:number,arg2:string,arg3:string,arg4:string):Promise<void>;
+export function UpdateTag(arg1:number,arg2:string,arg3:string,arg4:string,arg5:boolean):Promise<void>;

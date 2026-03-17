@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import './App.css';
+import './styles/main.css'; // Main stylesheet for the app
 
 // --- Components ---
 import EntryList from './components/EntryList';
@@ -7,9 +7,12 @@ import CompendiumView from './components/CompendiumView';
 import LibraryGrid from './components/LibraryGrid';
 import SeriesDetail from './components/SeriesDetail';
 import SettingsModal from './components/modals/SettingsModal';
+
+// --- Controllers ---
 import EntryListController from './controllers/EntryListController';
 import LibraryGridController from './controllers/LibraryGridController';
 import SeriesDetailController from './controllers/SeriesDetailController';
+import VaultController from './controllers/VaultController'; // <-- ADDED MISSING IMPORT!
 
 // --- Icons ---
 import { 
@@ -18,13 +21,15 @@ import {
     Info, 
     PlusCircle, 
     Settings, 
-    BookOpen 
+    BookOpen,
+    Library,
+    Database
 } from 'lucide-react';
 
 function App() {
-    // Moved inside the component!
     const [activeLibraryId, setActiveLibraryId] = useState(1); 
     
+    // Your app uses 'view' to track the current page!
     const [view, setView] = useState('list'); 
     const [isAddingNew, setIsAddingNew] = useState(false);
     const [selectedSeries, setSelectedSeries] = useState(null);
@@ -62,14 +67,22 @@ function App() {
                     
                     <button 
                         className={`nav-item ${isActive('library') || view === 'series_detail' ? 'active' : ''}`} 
-                        onClick={() => setView('library')}
+                        onClick={() => { setView('library'); setIsAddingNew(false); }}
                     >
                         <Grid size={20} /> Library
+                    </button>
+
+                    {/* FIXED: Changed activeTab to view and setActiveTab to setView */}
+                    <button 
+                        className={`nav-item ${view === 'vault' ? 'active' : ''}`}
+                        onClick={() => { setView('vault'); setIsAddingNew(false); }}
+                    >
+                        <Database size={20} /> File storage
                     </button>
                     
                     <button 
                         className={`nav-item ${isActive('about') ? 'active' : ''}`} 
-                        onClick={() => setView('about')}
+                        onClick={() => { setView('about'); setIsAddingNew(false); }}
                     >
                         <Info size={20} /> About
                     </button>
@@ -91,27 +104,32 @@ function App() {
 
             {/* --- MAIN CONTENT AREA --- */}
             <main className="content-wrapper">
-                {/* Passed libraryId to the views so they know which data to load */}
+                
                 {view === 'about' && <CompendiumView libraryId={activeLibraryId} />}
                 
                 {view === 'list' && (
-                    <EntryListController // 2. Update the tag here
+                    <EntryListController 
                         libraryId={activeLibraryId}
                         isAddingNew={isAddingNew}
                         onAddComplete={() => setIsAddingNew(false)}
                         onAddNew={() => setIsAddingNew(true)} 
                     />
                 )}
+
+                {/* FIXED: Changed activeTab to view */}
+                {view === 'vault' && (
+                    <VaultController />
+                )}
                 
                 {view === 'library' && (
-                    <LibraryGridController // Update tag
+                    <LibraryGridController 
                         libraryId={activeLibraryId} 
                         onSelectSeries={handleSelectSeries} 
                     />
                 )}
                 
                 {view === 'series_detail' && selectedSeries && (
-                    <SeriesDetailController // Update tag
+                    <SeriesDetailController 
                         entry={selectedSeries} 
                         onBack={() => setView('library')} 
                     />

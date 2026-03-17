@@ -1,0 +1,14 @@
+/* This is the color palette*/
+:root {
+  --header-bg: #800F2F;
+  --ui-header: #C9184A;
+  --button-bg: #CF3460;
+  --bg-color: #FFFFFF;
+  --text-color: #333333;
+  --text-light: #FFFFFF;
+  --row-color-1: #FFFFFF;
+  --row-color-2: #FFF9FA;
+  --border-color: #F8B7C9;
+  --dragging-bg: #FFF0F5;
+  --drag-border: 2px dashed var(--ui-header);
+}

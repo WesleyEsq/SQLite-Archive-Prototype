@@ -1,21 +1,19 @@
-// frontend/src/components/LibraryGrid.jsx
 import React from 'react';
-import { Virtuoso, VirtuosoGrid } from 'react-virtuoso';
-import { ChevronLeft, ChevronRight } from 'lucide-react';
-
-// Sub-components (Make sure you created these from the previous step!)
+import { VirtuosoGrid } from 'react-virtuoso';
+import { ChevronLeft, ChevronRight } from 'lucide-react'; 
 import LibraryToolbar from './library-grid/LibraryToolbar';
 import LibraryCard from './library-grid/LibraryCard';
+import LibraryCategoryRow from './library-grid/LibraryCategoryRow';
 
 export default function LibraryGrid({ 
-    // These all come from the Controller now!
     searchQuery, setSearchQuery, sortBy, setSortBy, 
-    filteredEntries, isSearching, scrollerRef, loadedCache, 
-    scrollCarousel, onSelectSeries 
+    filteredEntries, paginatedEntries, categories, isSearching, 
+    loadedCache, onSelectSeries,
+    currentPage, totalPages, handlePageChange,
+    loadMoreTagRows, hasMoreTags, isLoadingRows
 }) {
     return (
         <div className="library-wrapper">
-            {/* The Toolbar handles the Search and Sort UI */}
             <LibraryToolbar 
                 searchQuery={searchQuery} 
                 setSearchQuery={setSearchQuery} 
@@ -23,61 +21,85 @@ export default function LibraryGrid({
                 setSortBy={setSortBy} 
             />
 
-            <div className="library-content-area">
+            <div className="library-content-area" style={{ width: '100%', height: 'calc(100vh - 100px)' }}>
                 {isSearching ? (
+                    /* --- SEARCH MODE (Grid) --- */
                     <div style={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
-                        {/* SEARCH RESULTS VIEW */}
-                        <h3 className="section-title" style={{ paddingLeft: '30px', marginTop: '10px' }}>
-                            Search Results ({filteredEntries.length})
-                        </h3>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px 30px' }}>
+                            <h3 className="section-title" style={{ margin: 0 }}>
+                                Search Results ({filteredEntries.length})
+                            </h3>
+                            
+                            {totalPages > 1 && (
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '15px' }}>
+                                    <button 
+                                        className="action-rect-btn" 
+                                        style={{ padding: '6px 12px', opacity: currentPage === 1 ? 0.5 : 1 }}
+                                        disabled={currentPage === 1}
+                                        onClick={() => handlePageChange('prev')}
+                                    >
+                                        <ChevronLeft size={18} /> Prev
+                                    </button>
+                                    <span style={{ fontWeight: 'bold', color: 'var(--ui-header)' }}>
+                                        Page {currentPage} of {totalPages}
+                                    </span>
+                                    <button 
+                                        className="action-rect-btn" 
+                                        style={{ padding: '6px 12px', opacity: currentPage === totalPages ? 0.5 : 1 }}
+                                        disabled={currentPage === totalPages}
+                                        onClick={() => handlePageChange('next')}
+                                    >
+                                        Next <ChevronRight size={18} />
+                                    </button>
+                                </div>
+                            )}
+                        </div>
                         
                         <VirtuosoGrid
-                            style={{ height: '100%' }}
+                            style={{ height: '100%', width: '100%' }}
                             className="custom-scrollbar"
-                            data={filteredEntries}
-                            totalCount={filteredEntries.length}
+                            data={paginatedEntries} 
                             components={{
                                 List: React.forwardRef(({ style, children, ...props }, ref) => (
-                                    <div ref={ref} {...props} className="virtuoso-grid-list" style={{ ...style }}>
+                                    <div ref={ref} {...props} className="virtuoso-grid-list" style={{ ...style, display: 'flex', flexWrap: 'wrap', padding: '0 20px' }}>
                                         {children}
                                     </div>
                                 ))
                             }}
                             itemContent={(index, entry) => (
-                                <div style={{ height: '320px', width: '100%' }}>
+                                <div style={{ height: '320px', width: '240px', padding: '10px' }}>
                                     <LibraryCard entry={entry} onSelectSeries={onSelectSeries} loadedCache={loadedCache} />
                                 </div>
                             )}
                         />
                     </div>
                 ) : (
-                    <div className="category-row">
-                        {/* CAROUSEL VIEW */}
-                        <h3 className="section-title">All Library Entries <span className="count-badge">{filteredEntries.length}</span></h3>
+                    /* --- NETFLIX MODE (Multiple Rows) --- */
+                    <div className="custom-scrollbar" style={{ height: '100%', width: '100%', overflowY: 'auto' }}>
                         
-                        <div className="carousel-wrapper" style={{ height: 380, position: 'relative' }}>
-                            <button className="carousel-btn left" onClick={() => scrollCarousel('left')}>
-                                <ChevronLeft size={32} />
-                            </button>
-
-                            <Virtuoso
-                                horizontalDirection
-                                data={filteredEntries}
-                                style={{ height: '100%' }}
-                                scrollerRef={(ref) => scrollerRef.current = ref}
-                                itemContent={(_, entry) => (
-                                    <div style={{ width: 240, height: '100%', padding: '10px' }}>
-                                        <div style={{ height: 320 }}>
-                                            <LibraryCard entry={entry} onSelectSeries={onSelectSeries} loadedCache={loadedCache} />
-                                        </div>
-                                    </div>
-                                )}
+                        {/* Map all currently loaded categories */}
+                        {categories.map(category => (
+                            <LibraryCategoryRow 
+                                key={category.id}
+                                title={category.title}
+                                entries={category.entries}
+                                onSelectSeries={onSelectSeries}
+                                loadedCache={loadedCache}
                             />
+                        ))}
 
-                            <button className="carousel-btn right" onClick={() => scrollCarousel('right')}>
-                                <ChevronRight size={32} />
-                            </button>
-                        </div>
+                        {/* Pagination Trigger for Rows */}
+                        {hasMoreTags && (
+                            <div className="load-more-container" style={{ paddingBottom: '60px' }}>
+                                <button 
+                                    className="load-more-btn" 
+                                    onClick={loadMoreTagRows}
+                                    disabled={isLoadingRows}
+                                >
+                                    {isLoadingRows ? "Loading..." : "Load More Collections"}
+                                </button>
+                            </div>
+                        )}
                     </div>
                 )}
             </div>

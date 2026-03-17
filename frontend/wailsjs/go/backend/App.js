@@ -10,8 +10,12 @@ export function CreateLibrary(arg1, arg2) {
   return window['go']['backend']['App']['CreateLibrary'](arg1, arg2);
 }
 
-export function CreateTag(arg1, arg2, arg3) {
-  return window['go']['backend']['App']['CreateTag'](arg1, arg2, arg3);
+export function CreateTag(arg1, arg2, arg3, arg4) {
+  return window['go']['backend']['App']['CreateTag'](arg1, arg2, arg3, arg4);
+}
+
+export function CreateVaultFolder(arg1) {
+  return window['go']['backend']['App']['CreateVaultFolder'](arg1);
 }
 
 export function DeleteEntry(arg1) {
@@ -30,6 +34,14 @@ export function DeleteTag(arg1) {
   return window['go']['backend']['App']['DeleteTag'](arg1);
 }
 
+export function DeleteVaultFile(arg1) {
+  return window['go']['backend']['App']['DeleteVaultFile'](arg1);
+}
+
+export function DeleteVaultFolder(arg1) {
+  return window['go']['backend']['App']['DeleteVaultFolder'](arg1);
+}
+
 export function ExportLibraryCSV(arg1) {
   return window['go']['backend']['App']['ExportLibraryCSV'](arg1);
 }
@@ -42,8 +54,16 @@ export function GetAllTags() {
   return window['go']['backend']['App']['GetAllTags']();
 }
 
+export function GetAllVaultFiles() {
+  return window['go']['backend']['App']['GetAllVaultFiles']();
+}
+
 export function GetEntries(arg1) {
   return window['go']['backend']['App']['GetEntries'](arg1);
+}
+
+export function GetEntriesByTag(arg1, arg2) {
+  return window['go']['backend']['App']['GetEntriesByTag'](arg1, arg2);
 }
 
 export function GetFiles(arg1) {
@@ -72,6 +92,22 @@ export function ImportFile(arg1) {
 
 export function ImportLegacyCSV(arg1) {
   return window['go']['backend']['App']['ImportLegacyCSV'](arg1);
+}
+
+export function MoveVaultFile(arg1, arg2) {
+  return window['go']['backend']['App']['MoveVaultFile'](arg1, arg2);
+}
+
+export function PromptAndUploadVaultFile(arg1) {
+  return window['go']['backend']['App']['PromptAndUploadVaultFile'](arg1);
+}
+
+export function RenameVaultFile(arg1, arg2) {
+  return window['go']['backend']['App']['RenameVaultFile'](arg1, arg2);
+}
+
+export function RenameVaultFolder(arg1, arg2) {
+  return window['go']['backend']['App']['RenameVaultFolder'](arg1, arg2);
 }
 
 export function SaveEntry(arg1) {
@@ -106,6 +142,6 @@ export function UpdateOrder(arg1) {
   return window['go']['backend']['App']['UpdateOrder'](arg1);
 }
 
-export function UpdateTag(arg1, arg2, arg3, arg4) {
-  return window['go']['backend']['App']['UpdateTag'](arg1, arg2, arg3, arg4);
+export function UpdateTag(arg1, arg2, arg3, arg4, arg5) {
+  return window['go']['backend']['App']['UpdateTag'](arg1, arg2, arg3, arg4, arg5);
 }

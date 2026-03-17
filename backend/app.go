@@ -163,12 +163,12 @@ func (a *App) UpdateEntryTags(entryID int, tagIDs []int) error {
 	return a.db.UpdateEntryTags(entryID, tagIDs)
 }
 
-func (a *App) CreateTag(name, description, icon string) error {
-	return a.db.CreateTag(name, description, icon)
+func (a *App) CreateTag(name, description, icon string, isCategory bool) error {
+	return a.db.CreateTag(name, description, icon, isCategory)
 }
 
-func (a *App) UpdateTag(id int, name, description, icon string) error {
-	return a.db.UpdateTag(id, name, description, icon)
+func (a *App) UpdateTag(id int, name, description, icon string, isCategory bool) error {
+	return a.db.UpdateTag(id, name, description, icon, isCategory)
 }
 
 func (a *App) DeleteTag(id int) error {
@@ -330,4 +330,72 @@ func (a *App) ExportLibraryCSV(libraryID int) (string, error) {
 	}
 
 	return fmt.Sprintf("Backup successfully saved to %s", savePath), nil
+}
+
+func (a *App) GetEntriesByTag(libraryID int, tagID int) ([]Entry, error) {
+	return a.db.GetEntriesByTag(libraryID, tagID)
+}
+
+// ==========================================
+// 6. VAULT BROWSER
+// ==========================================
+
+func (a *App) GetAllVaultFiles() ([]File, error) {
+	return a.db.GetAllVaultFiles()
+}
+
+func (a *App) MoveVaultFile(fileID int, newPath string) error {
+	return a.db.MoveVaultFile(fileID, newPath)
+}
+
+func (a *App) RenameVaultFile(fileID int, newName string) error {
+	return a.db.RenameVaultFile(fileID, newName)
+}
+
+func (a *App) DeleteVaultFile(fileID int) error {
+	return a.db.DeleteVaultFile(fileID)
+}
+
+// CreateVaultFolder uses the S3 trick: it creates a 0-byte hidden file to force the path to exist.
+func (a *App) CreateVaultFolder(path string) error {
+	_, err := a.db.UploadVaultFile(".keep", "application/x-directory", 0, []byte(""), path)
+	return err
+}
+
+// PromptAndUploadVaultFile opens the native OS file picker and saves the file directly to SQLite.
+func (a *App) PromptAndUploadVaultFile(virtualPath string) error {
+	// 1. Open Native File Picker
+	selection, err := runtime.OpenFileDialog(a.ctx, runtime.OpenDialogOptions{
+		Title: "Select File to Upload to Vault",
+	})
+	if err != nil || selection == "" {
+		return nil // User canceled the dialog, no error needed
+	}
+
+	// 2. Read the file directly from the OS
+	data, err := os.ReadFile(selection)
+	if err != nil {
+		return err
+	}
+
+	// 3. Extract metadata
+	filename := filepath.Base(selection)
+	sizeBytes := int64(len(data))
+
+	// Fast mime-type detection (first 512 bytes)
+	mimeType := http.DetectContentType(data)
+
+	// 4. Send to Vault
+	_, err = a.db.UploadVaultFile(filename, mimeType, sizeBytes, data, virtualPath)
+	return err
+}
+
+// RenameVaultFolder changes the virtual path of all files within that folder, effectively "renaming" it in the vault structure.
+func (a *App) RenameVaultFolder(oldPath, newPath string) error {
+	return a.db.RenameVaultFolder(oldPath, newPath)
+}
+
+// DeleteVaultFolder removes the folder and all its contents from the vault.
+func (a *App) DeleteVaultFolder(path string) error {
+	return a.db.DeleteVaultFolder(path)
 }

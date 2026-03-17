@@ -1,8 +1,5 @@
 import { useState, useEffect } from 'react';
-import { 
-    GetGroupSets, GetFiles, CreateGroupSet, DeleteGroupSet, 
-    DeleteFile, ExportMediaAsset, UpdateFileOrder, ImportFile 
-} from '../../wailsjs/go/backend/App';
+import { backend } from '../services/controller';
 
 export function useSeriesDetail(entryId) {
     const [groups, setGroups] = useState([]);
@@ -10,8 +7,6 @@ export function useSeriesDetail(entryId) {
     const [assets, setAssets] = useState({}); 
     const [uploadingGroupId, setUploadingGroupId] = useState(null);
     const [uploadProgress, setUploadProgress] = useState("");
-    
-    // Unified Viewer Context (Video, PDF, Epub)
     const [viewerContext, setViewerContext] = useState(null);
 
     useEffect(() => {
@@ -19,11 +14,11 @@ export function useSeriesDetail(entryId) {
     }, [entryId]);
 
     const loadGroups = () => {
-        GetGroupSets(entryId).then(res => setGroups(res || []));
+        backend.groupSets.getAll(entryId).then(res => setGroups(res || []));
     };
 
     const loadAssets = (groupId) => {
-        GetFiles(groupId).then(res => {
+        backend.files.getAll(groupId).then(res => {
             setAssets(prev => ({ ...prev, [groupId]: res || [] }));
         });
     };
@@ -33,7 +28,6 @@ export function useSeriesDetail(entryId) {
             setExpandedGroupId(null);
         } else {
             setExpandedGroupId(groupId);
-            // Lazy load assets only when the group is expanded
             if (!assets[groupId]) {
                 loadAssets(groupId);
             }
@@ -43,8 +37,7 @@ export function useSeriesDetail(entryId) {
     const handleCreateGroup = () => {
         const title = prompt("Enter new collection name (e.g., 'Season 1', 'Volume 1'):");
         if (title) {
-            // "collection" is a generic category string
-            CreateGroupSet(entryId, title, "collection")
+            backend.groupSets.create(entryId, title, "collection")
                 .then(() => loadGroups())
                 .catch(err => alert("Error creating collection: " + err));
         }
@@ -52,7 +45,7 @@ export function useSeriesDetail(entryId) {
 
     const handleDeleteGroup = (groupId) => {
         if (confirm("Delete this entire collection and ALL its files? This cannot be undone.")) {
-            DeleteGroupSet(groupId)
+            backend.groupSets.delete(groupId)
                 .then(() => {
                     loadGroups();
                     setExpandedGroupId(null);
@@ -61,16 +54,13 @@ export function useSeriesDetail(entryId) {
         }
     };
 
-    // This works by 
     const handleFileUpload = async (groupId) => {
         setUploadingGroupId(groupId);
         setUploadProgress("Waiting for OS File Picker...");
         
         try {
-            // Wails pauses React here, opens the native OS dialog, 
-            // and handles the heavy SQLite transaction securely in Go.
-            await ImportFile(groupId); 
-            loadAssets(groupId); // Refresh the UI list when done
+            await backend.files.import(groupId); 
+            loadAssets(groupId); 
         } catch (err) {
             alert("Upload failed: " + err);
         } finally {
@@ -86,30 +76,27 @@ export function useSeriesDetail(entryId) {
         const [moved] = groupAssets.splice(result.source.index, 1);
         groupAssets.splice(result.destination.index, 0, moved);
 
-        // Update sorting numbers
         const updatedAssets = groupAssets.map((asset, index) => ({
             ...asset,
             sort_order: index + 1
         }));
 
         setAssets(prev => ({ ...prev, [groupId]: updatedAssets }));
-        UpdateFileOrder(updatedAssets).catch(() => loadAssets(groupId));
+        backend.files.updateOrder(updatedAssets).catch(() => loadAssets(groupId));
     };
 
     const handleDownload = (asset) => {
-        // Triggers the native OS Save dialog via Go
-        ExportMediaAsset(asset.id, asset.filename)
+        backend.files.export(asset.id, asset.filename)
             .then(() => alert("Download Complete!"))
             .catch((err) => alert("Error: " + err));
     };
 
     const handleDeleteAsset = (assetId, groupId) => {
         if (confirm(`Delete this file?`)) {
-            DeleteFile(assetId).then(() => loadAssets(groupId));
+            backend.files.delete(assetId, groupId).then(() => loadAssets(groupId));
         }
     };
 
-    // Unified Viewer Logic
     const handleView = (asset, groupAssets, index) => {
         const mime = (asset.mime_type || '').toLowerCase();
         const fname = (asset.filename || '').toLowerCase();

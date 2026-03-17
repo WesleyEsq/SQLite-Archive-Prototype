@@ -5,21 +5,43 @@ type Tag struct {
 	ID          int    `json:"id"`
 	Name        string `json:"name"`
 	Description string `json:"description"`
-	Icon        string `json:"icon"`  // Stores a key like "sword", "magic", "slice_of_life"
-	Count       int    `json:"count"` // derived field: how many entries use this tag?
+	Icon        string `json:"icon"`
+	Count       int    `json:"count"`
+	IsCategory  bool   `json:"isCategory"`
 }
 
-func (db *DB) CreateTag(name, description, icon string) error {
-	_, err := db.conn.Exec("INSERT INTO tags (name, description, icon) VALUES (?, ?, ?)", name, description, icon)
-	return err
+func (db *DB) CreateTag(name, description, icon string, isCategory bool) error {
+	tx, err := db.conn.Begin()
+	if err != nil {
+		return err
+	}
+	defer tx.Rollback()
+
+	res, err := tx.Exec("INSERT INTO tags (name, description, icon) VALUES (?, ?, ?)", name, description, icon)
+	if err != nil {
+		return err
+	}
+
+	if isCategory {
+		tagID, _ := res.LastInsertId()
+		_, err = tx.Exec("INSERT INTO category_tags (tag_id) VALUES (?)", tagID)
+		if err != nil {
+			return err
+		}
+	}
+
+	return tx.Commit()
 }
 
 func (db *DB) GetAllTags() ([]Tag, error) {
-	// Using LEFT JOIN to get the count of entries per tag
 	query := `
-		SELECT t.id, t.name, COALESCE(t.description, ''), COALESCE(t.icon, ''), COUNT(et.entry_id) as count
+		SELECT 
+            t.id, t.name, COALESCE(t.description, ''), COALESCE(t.icon, ''), 
+            COUNT(et.entry_id) as count,
+            CASE WHEN ct.tag_id IS NOT NULL THEN 1 ELSE 0 END as is_category
 		FROM tags t
 		LEFT JOIN entry_tags et ON t.id = et.tag_id
+		LEFT JOIN category_tags ct ON t.id = ct.tag_id
 		GROUP BY t.id
 		ORDER BY t.name ASC
 	`
@@ -32,7 +54,7 @@ func (db *DB) GetAllTags() ([]Tag, error) {
 	var tags []Tag
 	for rows.Next() {
 		var tag Tag
-		if err := rows.Scan(&tag.ID, &tag.Name, &tag.Description, &tag.Icon, &tag.Count); err != nil {
+		if err := rows.Scan(&tag.ID, &tag.Name, &tag.Description, &tag.Icon, &tag.Count, &tag.IsCategory); err != nil {
 			return nil, err
 		}
 		tags = append(tags, tag)
@@ -42,9 +64,12 @@ func (db *DB) GetAllTags() ([]Tag, error) {
 
 func (db *DB) GetTagsForEntry(entryID int) ([]Tag, error) {
 	query := `
-		SELECT t.id, t.name, COALESCE(t.description, ''), COALESCE(t.icon, '')
+		SELECT 
+            t.id, t.name, COALESCE(t.description, ''), COALESCE(t.icon, ''),
+            CASE WHEN ct.tag_id IS NOT NULL THEN 1 ELSE 0 END as is_category
 		FROM tags t
 		INNER JOIN entry_tags et ON t.id = et.tag_id
+        LEFT JOIN category_tags ct ON t.id = ct.tag_id
 		WHERE et.entry_id = ?
 	`
 	rows, err := db.conn.Query(query, entryID)
@@ -56,7 +81,7 @@ func (db *DB) GetTagsForEntry(entryID int) ([]Tag, error) {
 	var tags []Tag
 	for rows.Next() {
 		var tag Tag
-		if err := rows.Scan(&tag.ID, &tag.Name, &tag.Description, &tag.Icon); err != nil {
+		if err := rows.Scan(&tag.ID, &tag.Name, &tag.Description, &tag.Icon, &tag.IsCategory); err != nil {
 			return nil, err
 		}
 		tags = append(tags, tag)
@@ -81,12 +106,31 @@ func (db *DB) DeleteTag(tagID int) error {
 	return err
 }
 
-func (db *DB) UpdateTag(id int, name, description, icon string) error {
-	_, err := db.conn.Exec(
-		"UPDATE tags SET name = ?, description = ?, icon = ? WHERE id = ?",
-		name, description, icon, id,
-	)
-	return err
+func (db *DB) UpdateTag(id int, name, description, icon string, isCategory bool) error {
+	tx, err := db.conn.Begin()
+	if err != nil {
+		return err
+	}
+	defer tx.Rollback()
+
+	_, err = tx.Exec("UPDATE tags SET name = ?, description = ?, icon = ? WHERE id = ?", name, description, icon, id)
+	if err != nil {
+		return err
+	}
+
+	if isCategory {
+		// INSERT OR IGNORE safely adds it if they toggled it ON
+		_, err = tx.Exec("INSERT OR IGNORE INTO category_tags (tag_id) VALUES (?)", id)
+	} else {
+		// DELETE safely removes it if they toggled it OFF
+		_, err = tx.Exec("DELETE FROM category_tags WHERE tag_id = ?", id)
+	}
+
+	if err != nil {
+		return err
+	}
+
+	return tx.Commit()
 }
 
 func (db *DB) UpdateEntryTags(entryID int, tagIDs []int) error {

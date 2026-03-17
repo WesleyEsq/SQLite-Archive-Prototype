@@ -1,9 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { SaveEntry, SetCoverImage } from '../../wailsjs/go/backend/App';
+import { backend } from '../services/controller'; // <-- NEW IMPORT
 import EntryForm from '../components/EntryForm';
 
 export default function EntryFormController({ entryToEdit, nextNumber, onSave, onCancel }) {
-    // 1. State
     const [formData, setFormData] = useState({
         id: 0, 
         number: nextNumber, 
@@ -13,7 +12,6 @@ export default function EntryFormController({ entryToEdit, nextNumber, onSave, o
         description: ''
     });
 
-    // 2. Lifecycle
     useEffect(() => {
         if (entryToEdit) {
             const { image, backup, backupName, ...cleanData } = entryToEdit;
@@ -21,14 +19,12 @@ export default function EntryFormController({ entryToEdit, nextNumber, onSave, o
         }
     }, [entryToEdit]);
 
-    // 3. Logic & Handlers
     const handleChange = (e) => setFormData({ ...formData, [e.target.name]: e.target.value });
 
     const handleUpdateCover = async () => {
         if (formData.id) {
             try {
-                await SetCoverImage(formData.id);
-                // Trigger a re-render of the image by adding a timestamp query
+                await backend.entries.setCover(formData.id);
                 setFormData({ ...formData, _t: Date.now() }); 
             } catch (err) {
                 console.error("Failed to update cover:", err);
@@ -39,13 +35,11 @@ export default function EntryFormController({ entryToEdit, nextNumber, onSave, o
     const handleSubmit = () => {
         if (!formData.title) return alert("Title required");
         
-        // Pass only the lightweight text data to Go
-        SaveEntry(formData)
+        backend.entries.save(formData)
             .then(() => onSave())
             .catch(err => alert("Error saving entry: " + err));
     };
 
-    // 4. Render purely visual component
     return (
         <EntryForm 
             entryToEdit={entryToEdit}

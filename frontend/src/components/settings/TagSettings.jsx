@@ -1,24 +1,22 @@
 import React, { useState, useEffect } from 'react';
 import { renderIcon, iconKeys } from '../../utils/iconMap';
-import { CreateTag, UpdateTag, GetAllTags, DeleteTag } from '../../../wailsjs/go/backend/App'; // <--- Import UpdateTag
-import '../../styles/tags.css'; 
-// Import Pencil icon for the edit button
+import { backend } from '../../services/controller'; // <-- Updated to use the Services Layer
 import { Pencil } from 'lucide-react'; 
 
 export default function TagSettings() {
     const [tags, setTags] = useState([]);
     
-    // Form State
-    const [formData, setFormData] = useState({ name: '', description: '', icon: 'tag' });
+    // 1. ADDED: isCategory to the default form state
+    const [formData, setFormData] = useState({ name: '', description: '', icon: 'tag', isCategory: false });
     
     // UI State
     const [isFormOpen, setIsFormOpen] = useState(false);
-    const [editingId, setEditingId] = useState(null); // null = Creating, Number = Editing
+    const [editingId, setEditingId] = useState(null); 
 
     useEffect(() => { loadTags(); }, []);
 
     const loadTags = () => {
-        GetAllTags().then(res => setTags(res || []));
+        backend.tags.getAll().then(res => setTags(res || []));
     };
 
     // --- HANDLERS ---
@@ -27,14 +25,16 @@ export default function TagSettings() {
         setFormData({ 
             name: tag.name, 
             description: tag.description, 
-            icon: tag.icon 
+            icon: tag.icon,
+            isCategory: tag.isCategory || false // 2. Load existing state
         });
         setEditingId(tag.id);
         setIsFormOpen(true);
     };
 
     const handleCancel = () => {
-        setFormData({ name: '', description: '', icon: 'tag' });
+        // 3. Reset state
+        setFormData({ name: '', description: '', icon: 'tag', isCategory: false });
         setEditingId(null);
         setIsFormOpen(false);
     };
@@ -43,16 +43,16 @@ export default function TagSettings() {
         if (!formData.name) return;
 
         if (editingId) {
-            // UPDATE EXISTING
-            UpdateTag(editingId, formData.name, formData.description, formData.icon)
+            // 4. Pass isCategory to Update
+            backend.tags.update(editingId, formData.name, formData.description, formData.icon, formData.isCategory)
                 .then(() => {
                     loadTags();
                     handleCancel();
                 })
                 .catch(err => alert("Update failed: " + err));
         } else {
-            // CREATE NEW
-            CreateTag(formData.name, formData.description, formData.icon)
+            // 5. Pass isCategory to Create
+            backend.tags.create(formData.name, formData.description, formData.icon, formData.isCategory)
                 .then(() => {
                     loadTags();
                     handleCancel();
@@ -62,8 +62,8 @@ export default function TagSettings() {
     };
 
     const handleDelete = (id) => {
-        if (confirm("Delete this tag? It will be removed from all entries.")) {
-            DeleteTag(id).then(loadTags);
+        if (window.confirm("Delete this tag? It will be removed from all entries.")) {
+            backend.tags.delete(id).then(loadTags);
         }
     };
 
@@ -109,7 +109,18 @@ export default function TagSettings() {
                             ))}
                         </div>
 
-                        <div className="form-actions">
+                        {/* 6. THE NEW CHECKBOX UI */}
+                        <label style={{ display: 'flex', alignItems: 'center', gap: '10px', marginTop: '15px', cursor: 'pointer', fontWeight: 'bold', color: 'var(--ui-header)' }}>
+                            <input 
+                                type="checkbox" 
+                                checked={formData.isCategory}
+                                onChange={e => setFormData({...formData, isCategory: e.target.checked})}
+                                style={{ width: '18px', height: '18px', cursor: 'pointer' }}
+                            />
+                            Display as a Library Category Row
+                        </label>
+
+                        <div className="form-actions" style={{ marginTop: '20px' }}>
                             <button className="save-btn" onClick={handleSubmit}>
                                 {editingId ? "Update Tag" : "Create Tag"}
                             </button>
@@ -120,7 +131,7 @@ export default function TagSettings() {
             </div>
 
             {/* 2. TAG LIST */}
-            <div className="tag-list-scroll" style={{ height: '400px', border: '1px solid #eee', borderRadius: '8px' }}>
+            <div className="tag-list-scroll" style={{ height: '400px', border: '1px solid #eee', borderRadius: '8px', overflowY: 'auto' }}>
                 {tags.length === 0 && <p className="empty-text" style={{padding: '20px', textAlign:'center', color:'#999'}}>No tags found.</p>}
                 
                 {tags.map(tag => (
@@ -130,7 +141,11 @@ export default function TagSettings() {
                         </div>
                         
                         <div className="tag-info">
-                            <span className="tag-name">{tag.name}</span>
+                            {/* 7. VISUAL BADGE FOR CATEGORIES */}
+                            <span className="tag-name" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                {tag.name}
+                                {tag.isCategory && <span style={{ fontSize: '0.7em', background: 'var(--ui-header)', color: 'white', padding: '2px 6px', borderRadius: '10px' }}>Category</span>}
+                            </span>
                             <span className="tag-desc">{tag.description}</span>
                         </div>
                         

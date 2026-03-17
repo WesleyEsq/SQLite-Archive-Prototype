@@ -1,0 +1,266 @@
+/* src/styles/4-views/library.css */
+
+/* ==========================================
+   1. LAYOUT & WRAPPERS
+   ========================================== */
+.library-wrapper {
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    height: 100vh; 
+    overflow: hidden; 
+}
+
+.library-header-box {
+    width: 100%;
+    background: var(--bg-color);
+    border-bottom: 1px solid var(--border-color);
+    display: flex;
+    justify-content: center;
+    padding: 20px 0;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.02);
+    z-index: 20;
+    flex-shrink: 0;
+}
+
+.library-toolbar {
+    width: 100%;
+    max-width: 95%;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0 30px;
+}
+
+/* ==========================================
+   2. SEARCH & CONTROLS
+   ========================================== */
+.search-input-wrapper {
+    display: flex;
+    align-items: center;
+    position: relative;
+    width: 400px;
+}
+
+.search-input-wrapper input {
+    width: 100%;
+    padding: 12px 50px 12px 20px;
+    border-radius: 30px;
+    border: 2px solid #eee;
+    outline: none;
+    font-size: 1rem;
+    transition: all 0.2s;
+    background: #f9f9f9;
+}
+
+.search-input-wrapper input:focus {
+    border-color: var(--ui-header);
+    background: white;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+}
+
+.search-circle-btn {
+    position: absolute;
+    right: 6px;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 38px;
+    height: 38px;
+    background: var(--ui-header);
+    border: none;
+    border-radius: 50%;
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.search-circle-btn:hover { 
+    background: var(--header-bg); 
+    transform: translateY(-50%) scale(1.1); 
+}
+
+.sort-controls label {
+    font-weight: bold;
+    color: var(--ui-header);
+    margin-right: 10px;
+}
+
+.sort-controls select {
+    padding: 10px 15px;
+    border-radius: 8px;
+    border: 1px solid var(--border-color);
+    background: #f9f9f9;
+    cursor: pointer;
+    font-weight: 600;
+    color: var(--text-color);
+}
+
+/* ==========================================
+   3. GRID & CAROUSEL LAYOUTS
+   ========================================== */
+.library-content-area {
+    flex-grow: 1;
+    width: 100%;
+    overflow: hidden;
+}
+
+.category-row {
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    margin-top: 20px;
+}
+
+.section-title {
+    font-size: 1.2rem;
+    color: var(--text-color);
+    margin-bottom: 15px;
+    margin-left: 40px; 
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.count-badge {
+    background: var(--row-color-2); 
+    color: var(--ui-header); 
+    padding: 2px 8px; 
+    border-radius: 12px; 
+    font-size: 0.8em;
+    border: 1px solid var(--border-color);
+}
+
+.carousel-wrapper {
+    position: relative;
+    width: 100%;
+}
+
+.virtuoso-grid-list {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); 
+    gap: 20px;
+    padding: 10px 20px 40px 20px;
+    box-sizing: border-box; 
+    width: 100% !important; 
+}
+
+/* Custom Webkit Scrollbar */
+.custom-scrollbar::-webkit-scrollbar { width: 10px; }
+.custom-scrollbar::-webkit-scrollbar-track { background: #f4f4f4; border-radius: 5px; }
+.custom-scrollbar::-webkit-scrollbar-thumb { background-color: var(--border-color); border-radius: 5px; border: 2px solid #f4f4f4; }
+.custom-scrollbar::-webkit-scrollbar-thumb:hover { background-color: var(--ui-header); }
+
+/* Navigation Arrows */
+.carousel-btn {
+    position: absolute;
+    top: 10px;
+    bottom: 20px;
+    width: 60px;
+    z-index: 20;
+    background: rgba(255,255,255,0.9);
+    border: none;
+    color: var(--ui-header);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.2s;
+    opacity: 0; 
+}
+.carousel-wrapper:hover .carousel-btn { opacity: 1; }
+.carousel-btn:hover { background: white; color: var(--header-bg); box-shadow: 0 0 15px rgba(0,0,0,0.1); }
+.carousel-btn.left { left: 0; background: linear-gradient(to right, rgba(255,255,255,1) 40%, rgba(255,255,255,0)); }
+.carousel-btn.right { right: 0; background: linear-gradient(to left, rgba(255,255,255,1) 40%, rgba(255,255,255,0)); }
+
+
+/* ==========================================
+   4. THE RED & WHITE THEMED CARDS
+   ========================================== */
+.library-card {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    border-radius: 12px;
+    overflow: hidden;
+    cursor: pointer;
+    background-color: var(--bg-color);
+    border: 1px solid var(--border-color);
+    display: flex;
+    flex-direction: column;
+    /* Hardware acceleration & cinematic hover */
+    transition: transform 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94), box-shadow 0.3s ease, border-color 0.3s ease;
+    box-shadow: 0 4px 8px rgba(0,0,0,0.05);
+}
+
+.library-card:hover {
+    transform: scale(1.05);
+    /* Red tinted shadow to match the theme */
+    box-shadow: 0 12px 24px rgba(201, 24, 74, 0.25); 
+    border-color: var(--ui-header);
+    z-index: 10;
+}
+
+/* Tiny Red Header Badge */
+.library-card-top-badge {
+    position: absolute;
+    top: 0;
+    right: 0;
+    background: var(--ui-header);
+    color: white;
+    padding: 4px 12px;
+    border-bottom-left-radius: 12px;
+    font-weight: bold;
+    font-size: 0.85rem;
+    z-index: 5;
+    box-shadow: -2px 2px 5px rgba(0,0,0,0.2);
+}
+
+/* Image section takes remaining height minus footer */
+.library-card-image {
+    width: 100%;
+    height: calc(100% - 65px); 
+    object-fit: cover; 
+    display: block;
+    transform: translateZ(0); 
+    background: #f0f0f0;
+}
+
+/* Solid White Footer with Red Accent line */
+.library-card-footer {
+    height: 65px;
+    background: white;
+    border-top: 3px solid var(--ui-header);
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    padding: 0 12px;
+    z-index: 5;
+}
+
+.library-card-title {
+    color: var(--text-color);
+    font-size: 1.05rem;
+    font-weight: 800;
+    margin: 0 0 4px 0;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.library-card-meta {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 0.8rem;
+    color: #888;
+    font-weight: bold;
+}
+
+.carousel-scroller {
+    overflow-y: hidden !important; 
+    scroll-behavior: smooth;
+}

@@ -1,33 +1,42 @@
 import React, { useState } from 'react';
 
 export default function LibraryCard({ entry, onSelectSeries, loadedCache }) {
-    // Check if this image was loaded previously via the ref passed from Controller
-    const seenBefore = loadedCache.current.has(entry.id);
-    const [isLoaded, setIsLoaded] = useState(seenBefore);
+    const [imgSrc, setImgSrc] = useState(`/images/${entry.id}?t=${Date.now()}`);
 
     return (
         <div className="library-card" onClick={() => onSelectSeries(entry)}>
-            <div className="library-card-image-wrapper">
-                <div className="card-accent-bar"></div>
-                <img 
-                    src={`/images/${entry.id}`} 
-                    alt={entry.title} 
-                    loading="lazy"
-                    className={`library-cover-img ${isLoaded ? 'loaded' : ''} ${seenBefore ? 'instant' : ''}`}
-                    onLoad={(e) => {
-                        loadedCache.current.add(entry.id);
-                        setIsLoaded(true);
-                    }}
-                    onError={(e) => {
-                        e.target.style.display = 'none'; 
-                        e.target.parentNode.classList.add('broken');
-                    }}
-                />
-                <div className="library-card-overlay">
-                    <span className={`rank-badge rank-${entry.rank ? entry.rank.charAt(0) : 'U'}`}>{entry.rank}</span>
+            
+            {/* 1. TINY RED HEADER BADGE */}
+            <div className="library-card-top-badge">
+                #{entry.number}
+            </div>
+
+            {/* 2. MAIN IMAGE */}
+            <img 
+                src={imgSrc} 
+                alt={entry.title} 
+                className="library-card-image"
+                onError={(e) => {
+                    setImgSrc('/default-cover.png');
+                }}
+            />
+            
+            {/* 3. SOLID WHITE FOOTER */}
+            <div className="library-card-footer">
+                <h4 className="library-card-title" title={entry.title}>
+                    {entry.title}
+                </h4>
+                
+                <div className="library-card-meta">
+                    <span>{entry.rank ? "Rank: " : ""}</span>
+                    {entry.rank && (
+                        <span className={`rank-badge rank-${entry.rank.charAt(0)}`} style={{ padding: '2px 6px', fontSize: '0.75rem' }}>
+                            {entry.rank}
+                        </span>
+                    )}
                 </div>
             </div>
-            <div className="library-card-title">{entry.title}</div>
+            
         </div>
     );
 }

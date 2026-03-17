@@ -38,7 +38,7 @@ export default function EntryViewRow({
                         <div className="details-panel">
                             <img src={`data:image/jpeg;base64,${entry.image || BLANK_IMAGE_BASE64}`} className="details-image" alt="Cover" />
                             <div className="details-text">
-                                <h4>Description</h4>
+                                <h3>Description</h3>
                                 <p>{entry.description}</p>
                                 {entry.backupName && (
                                     <button className="download-button" onClick={() => handleDownloadBackup(entry.id)}>

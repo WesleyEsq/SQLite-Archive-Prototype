@@ -1,28 +1,66 @@
-// src/controllers/LibraryGridController.jsx
 import React, { useState, useEffect, useMemo, useRef } from 'react';
-import { GetEntries } from '../../wailsjs/go/backend/App';
+import { backend } from '../services/controller';
 import LibraryGrid from '../components/LibraryGrid';
 
+const ITEMS_PER_PAGE = 30; 
+const ROWS_PER_CHUNK = 3; // How many tag rows to load at a time
+
 export default function LibraryGridController({ libraryId, onSelectSeries }) {
-    // 1. State Management
     const [allEntries, setAllEntries] = useState([]);
     const [searchQuery, setSearchQuery] = useState("");
     const [sortBy, setSortBy] = useState("number");
     
-    // 2. Refs (Passed down to UI for DOM manipulation/caching)
-    const scrollerRef = useRef(null);
+    // Pagination & Lazy Loading State
+    const [currentPage, setCurrentPage] = useState(1);
+    const [tags, setTags] = useState([]);
+    const [tagCategories, setTagCategories] = useState([]);
+    const [loadedTagsCount, setLoadedTagsCount] = useState(0);
+    const [isLoadingRows, setIsLoadingRows] = useState(false);
+    
     const loadedCache = useRef(new Set());
 
-    // 3. Wails Backend Fetch
+    // 1. Initial Mount: Fetch all entries (for search/top row) and all tags
     useEffect(() => {
         if (libraryId) {
-            GetEntries(libraryId)
-                .then(res => setAllEntries(res || []))
-                .catch(err => console.error("Error fetching entries:", err));
+            backend.entries.getAll(libraryId).then(res => setAllEntries(res || []));
+            
+            backend.tags.getAll().then(res => {
+                // UPDATE: Only keep tags that have entries AND are marked as categories!
+                const validTags = (res || [])
+                    .filter(t => t.count > 0 && t.isCategory) 
+                    .sort((a, b) => b.count - a.count);
+                
+                setTags(validTags);
+            });
         }
     }, [libraryId]);
 
-    // 4. Sorting & Filtering Logic
+    // 2. Fetch a chunk of rows from the backend
+    const loadMoreTagRows = async () => {
+        if (isLoadingRows || loadedTagsCount >= tags.length) return;
+        setIsLoadingRows(true);
+
+        const nextTags = tags.slice(loadedTagsCount, loadedTagsCount + ROWS_PER_CHUNK);
+        
+        // Fetch all 3 tag rows in parallel for speed
+        const newCategories = await Promise.all(nextTags.map(async (tag) => {
+            const entries = await backend.entries.getByTag(libraryId, tag.id);
+            return { id: tag.id, title: `${tag.name} Collection`, entries: entries || [] };
+        }));
+
+        setTagCategories(prev => [...prev, ...newCategories.filter(c => c.entries.length > 0)]);
+        setLoadedTagsCount(prev => prev + ROWS_PER_CHUNK);
+        setIsLoadingRows(false);
+    };
+
+    // 3. Auto-load the first chunk once tags are ready
+    useEffect(() => {
+        if (tags.length > 0 && loadedTagsCount === 0) {
+            loadMoreTagRows();
+        }
+    }, [tags]);
+
+    // --- Search & Pagination Logic (Unchanged) ---
     const filteredEntries = useMemo(() => {
         let result = allEntries;
         if (searchQuery) {
@@ -40,31 +78,45 @@ export default function LibraryGridController({ libraryId, onSelectSeries }) {
         return result;
     }, [allEntries, searchQuery, sortBy]);
 
-    // 5. Actions
-    const scrollCarousel = (direction) => {
-        if (scrollerRef.current) {
-            scrollerRef.current.scrollBy({ 
-                left: direction === 'left' ? -800 : 800, 
-                behavior: 'smooth' 
-            });
-        }
+    useEffect(() => setCurrentPage(1), [searchQuery, sortBy]);
+
+    const totalPages = Math.ceil(filteredEntries.length / ITEMS_PER_PAGE);
+    const paginatedEntries = useMemo(() => {
+        const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
+        return filteredEntries.slice(startIndex, startIndex + ITEMS_PER_PAGE);
+    }, [filteredEntries, currentPage]);
+
+    const handlePageChange = (direction) => {
+        if (direction === 'next' && currentPage < totalPages) setCurrentPage(p => p + 1);
+        if (direction === 'prev' && currentPage > 1) setCurrentPage(p => p - 1);
     };
 
-    const isSearching = searchQuery.length > 0;
+    // 4. Combine the "All" row with the Lazy-Loaded Tag rows
+    const categories = useMemo(() => {
+        let cats = [{ id: 'all', title: 'All Library Entries', entries: filteredEntries }];
+        return [...cats, ...tagCategories];
+    }, [filteredEntries, tagCategories]);
 
-    // 6. Render the "Dumb" Component
     return (
         <LibraryGrid
             searchQuery={searchQuery}
             setSearchQuery={setSearchQuery}
             sortBy={sortBy}
             setSortBy={setSortBy}
-            filteredEntries={filteredEntries}
-            isSearching={isSearching}
-            scrollerRef={scrollerRef}
+            filteredEntries={filteredEntries}       
+            paginatedEntries={paginatedEntries}     
+            categories={categories}
+            isSearching={searchQuery.length > 0}
             loadedCache={loadedCache}
-            scrollCarousel={scrollCarousel}
             onSelectSeries={onSelectSeries}
+            currentPage={currentPage}
+            totalPages={totalPages}
+            handlePageChange={handlePageChange}
+            
+            // New Lazy Loading Props
+            loadMoreTagRows={loadMoreTagRows}
+            hasMoreTags={loadedTagsCount < tags.length}
+            isLoadingRows={isLoadingRows}
         />
     );
 }

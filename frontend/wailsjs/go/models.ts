@@ -33,6 +33,7 @@ export namespace backend {
 	    mime_type: string;
 	    file_size: number;
 	    sort_order: number;
+	    virtual_path: string;
 	
 	    static createFrom(source: any = {}) {
 	        return new File(source);
@@ -46,6 +47,7 @@ export namespace backend {
 	        this.mime_type = source["mime_type"];
 	        this.file_size = source["file_size"];
 	        this.sort_order = source["sort_order"];
+	        this.virtual_path = source["virtual_path"];
 	    }
 	}
 	export class GroupSet {
@@ -94,6 +96,7 @@ export namespace backend {
 	    description: string;
 	    icon: string;
 	    count: number;
+	    isCategory: boolean;
 	
 	    static createFrom(source: any = {}) {
 	        return new Tag(source);
@@ -106,6 +109,7 @@ export namespace backend {
 	        this.description = source["description"];
 	        this.icon = source["icon"];
 	        this.count = source["count"];
+	        this.isCategory = source["isCategory"];
 	    }
 	}
 

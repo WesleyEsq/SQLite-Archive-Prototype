@@ -1,0 +1,27 @@
+/* src/styles/main.css */
+
+/* 1. Base (Variables load first) */
+@import './1-base/variables.css';
+@import './1-base/reset.css';
+
+/* 2. Utilities (The "Custom Tailwind" loads second) */
+@import './2-utilities/layout.css';
+
+/* 3. Components (UI elements load third, so they can use variables/utilities) */
+@import './3-components/sidebar.css';
+@import './3-components/buttons.css';
+@import './3-components/search.css';
+@import './3-components/header.css';
+@import './3-components/forms.css';
+@import './3-components/modals.css';
+@import './3-components/tags.css';
+@import './3-components/table.css';
+@import './3-components/markdown.css';
+
+/* 4. Views (Specific pages load last so they can override anything above them) */
+@import './4-views/entry-list.css';
+@import './4-views/library.css';
+@import './4-views/series-detail.css';
+@import './4-views/settings.css';
+@import './4-views/about.css';
+@import './4-views/vault.css';

@@ -1,10 +1,6 @@
 import { useState, useEffect } from 'react';
-import { 
-    GetEntries, UpdateOrder, DeleteEntry, SaveEntry, 
-    GetTagsForEntry 
-} from '../../wailsjs/go/backend/App';
+import { backend } from '../services/controller'; // <-- NEW IMPORT
 
-// ADDED libraryId as the first parameter
 export function useEntryList(libraryId, isAddingNew, onAddComplete, refreshTrigger) {
     const [entries, setEntries] = useState([]);
     const [searchQuery, setSearchQuery] = useState("");
@@ -29,7 +25,7 @@ export function useEntryList(libraryId, isAddingNew, onAddComplete, refreshTrigg
     }, [isAddingNew]);
 
     const refreshEntries = () => {
-        GetEntries(libraryId).then(res => setEntries(res || [])).catch(console.error);
+        backend.entries.getAll(libraryId).then(res => setEntries(res || [])).catch(console.error);
     };
 
     const handleSearchKeyDown = (e) => { if (e.key === 'Enter') refreshEntries(); };
@@ -48,14 +44,13 @@ export function useEntryList(libraryId, isAddingNew, onAddComplete, refreshTrigg
     };
 
     const saveEdit = () => {
-        // --- THE FIX: Strict Integer Casting for Go ---
         const payload = { 
             ...editForm, 
             id: editForm.id === 'NEW' ? 0 : parseInt(editForm.id, 10),
-            library_id: parseInt(libraryId, 10) // Ensure it gets attached to the current library
+            library_id: parseInt(libraryId, 10) 
         };
         
-        SaveEntry(payload).then(() => {
+        backend.entries.save(payload).then(() => {
             refreshEntries(); 
             setEditingId(null);
             if (isAddingNew) onAddComplete();
@@ -63,7 +58,7 @@ export function useEntryList(libraryId, isAddingNew, onAddComplete, refreshTrigg
     };
 
     const handleDelete = (id) => { 
-        if (window.confirm("Delete this entry?")) DeleteEntry(id).then(refreshEntries); 
+        if (window.confirm("Delete this entry?")) backend.entries.delete(id).then(refreshEntries); 
     };
 
     const handleChange = (e) => setEditForm(prev => ({ ...prev, [e.target.name]: e.target.value }));
@@ -76,7 +71,7 @@ export function useEntryList(libraryId, isAddingNew, onAddComplete, refreshTrigg
         items.splice(result.destination.index, 0, reorderedItem);
         const updated = items.map((item, idx) => ({ ...item, number: String(idx + 1) }));
         setEntries(updated);
-        UpdateOrder(updated).catch(alert);
+        backend.entries.updateOrder(updated).catch(alert);
     };
 
     const handleRowClick = async (id) => {
@@ -85,14 +80,14 @@ export function useEntryList(libraryId, isAddingNew, onAddComplete, refreshTrigg
         setExpandedRowId(isExpanding ? id : null);
         
         if (isExpanding) {
-            GetTagsForEntry(id).then(tags => {
+            backend.tags.getForEntry(id).then(tags => {
                 setEntryTags(prev => ({ ...prev, [id]: tags || [] }));
             });
         }
     };
 
     const refreshTags = (entryId) => {
-        GetTagsForEntry(entryId).then(tags => {
+        backend.tags.getForEntry(entryId).then(tags => {
             setEntryTags(prev => ({ ...prev, [entryId]: tags || [] }));
         });
     };

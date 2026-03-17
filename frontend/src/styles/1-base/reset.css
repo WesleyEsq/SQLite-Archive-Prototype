@@ -1,0 +1,43 @@
+html {
+    background-color: var(--bg-color);
+    text-align: center;
+    color: var(--text-color);
+}
+
+body {
+    margin: 0;
+    color: var(--text-color);
+    font-family: "Nunito", sans-serif;
+}
+
+@font-face {
+    font-family: "Nunito";
+    font-style: normal;
+    font-weight: 400;
+    /* Add one more ../ to jump out of the 1-base folder AND the styles folder */
+    src: local(""), url("../../assets/fonts/nunito-v16-latin-regular.woff2") format("woff2");
+}
+
+
+
+/* src/styles/1-base/reset.css */
+html, body, #root {
+    margin: 0;
+    padding: 0;
+    width: 100vw;
+    height: 100vh;
+    overflow: hidden; /* Prevents rogue scrollbars on the whole window */
+}
+
+#App, #app {
+    display: flex !important;
+    flex-direction: row !important; /* FORCES side-by-side */
+    flex-wrap: nowrap !important;   /* PREVENTS the content from dropping below */
+    height: 100vh;
+    width: 100vw;
+    overflow: hidden;
+    font-family: 'Nunito', sans-serif;
+    color: var(--text-color);
+    background-color: var(--bg-color);
+    text-align: center;
+}

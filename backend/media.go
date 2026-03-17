@@ -31,8 +31,7 @@ func (db *DB) DeleteGroupSet(id int) error {
 
 // --- File & Object Logic (Replacing MediaAsset) ---
 
-// AddFile handles the 1:1 relationship securely via a Transaction.
-// It inserts metadata into 'files', and the raw bytes into 'objects'.
+// AddFile handles the relationship securely via a Transaction.
 func (db *DB) AddFile(groupsetID int, filename, mimeType string, sizeBytes int64, data []byte, sortOrder int) (int, error) {
 	tx, err := db.conn.Begin()
 	if err != nil {
@@ -40,26 +39,40 @@ func (db *DB) AddFile(groupsetID int, filename, mimeType string, sizeBytes int64
 	}
 	defer tx.Rollback()
 
-	// 1. Insert into the Vault (files table)
-	res, err := tx.Exec("INSERT INTO files (filename, mime_type, size_bytes) VALUES (?, ?, ?)", filename, mimeType, sizeBytes)
-	if err != nil {
-		return 0, err
-	}
-	fileID, _ := res.LastInsertId()
-
-	// 2. Insert the heavy BLOB into the objects table
-	_, err = tx.Exec("INSERT INTO objects (file_id, data) VALUES (?, ?)", fileID, data)
+	// 1. Insert into the pure 'files' vault (No groupset_id!)
+	res, err := tx.Exec(
+		"INSERT INTO files (filename, mime_type, size_bytes) VALUES (?, ?, ?)",
+		filename, mimeType, sizeBytes,
+	)
 	if err != nil {
 		return 0, err
 	}
 
-	// 3. Create the Link in the junction table!
-	_, err = tx.Exec("INSERT INTO groupset_files (groupset_id, file_id, sort_order) VALUES (?, ?, ?)", groupsetID, fileID, sortOrder)
+	fileID, err := res.LastInsertId()
 	if err != nil {
 		return 0, err
 	}
 
-	return int(fileID), tx.Commit()
+	// 2. Insert the heavy BLOB into 'objects'
+	_, err = tx.Exec(
+		"INSERT INTO objects (file_id, data) VALUES (?, ?)",
+		fileID, data,
+	)
+	if err != nil {
+		return 0, err
+	}
+
+	// 3. Create the Link in the Junction Table
+	_, err = tx.Exec(
+		"INSERT INTO groupset_files (groupset_id, file_id, sort_order) VALUES (?, ?, ?)",
+		groupsetID, fileID, sortOrder,
+	)
+	if err != nil {
+		return 0, err
+	}
+
+	err = tx.Commit()
+	return int(fileID), err
 }
 
 // UnlinkFile removes the file from the group, but keeps it safe in the Vault!

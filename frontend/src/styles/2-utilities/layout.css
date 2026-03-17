@@ -9,13 +9,6 @@
   background-color: var(--bg-color);
 }
 
-.content-wrapper {
-    display: flex;
-    flex-direction: row;
-    flex-grow: 1;
-    overflow: hidden;
-}
-
 .main-content {
   flex-grow: 1;
   padding: 20px 40px;
@@ -32,4 +25,14 @@
     background: linear-gradient(to right, var(--ui-header), transparent);
     margin: 20px 0;
     width: 100%;
+}
+
+.content-wrapper {
+    display: flex;
+    flex-direction: column; /* Stacks contents inside it vertically */
+    flex-grow: 1;           /* Tells it to fill the entire rest of the screen */
+    height: 100vh;
+    overflow-x: hidden;
+    overflow-y: auto;       /* Allows the right side to scroll independently */
+    background: var(--bg-color);
 }

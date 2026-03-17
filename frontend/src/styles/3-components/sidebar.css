@@ -1,0 +1,97 @@
+.app-sidebar {
+    width: 240px;
+    background: var(--ui-header);
+    color: var(--text-light);
+    display: flex;
+    flex-direction: column;
+    padding: 20px;
+    box-shadow: 4px 0 10px rgba(0,0,0,0.2);
+    z-index: 10;
+}
+
+.sidebar-logo {
+    font-size: 1.4rem;
+}
+
+/* src/styles/3-components/sidebar.css */
+
+.app-sidebar {
+    width: 240px;
+    background: var(--ui-header);
+    color: var(--text-light);
+    display: flex;
+    flex-direction: column;
+    padding: 20px;
+    box-shadow: 4px 0 10px rgba(0,0,0,0.2);
+    z-index: 10;
+    flex-shrink: 0; /* Ensures the sidebar never squishes */
+}
+
+.sidebar-logo {
+    font-size: 1.4rem;
+    font-weight: bold;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 40px;
+    padding-bottom: 20px;
+    border-bottom: 1px solid rgba(255,255,255,0.2);
+}
+
+.sidebar-nav {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    flex-grow: 1;
+}
+
+.nav-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 15px;
+    background: transparent;
+    color: rgba(255,255,255,0.8);
+    border: none;
+    border-radius: 8px;
+    font-size: 1.05rem;
+    cursor: pointer;
+    transition: all 0.2s;
+    text-align: left;
+}
+
+.nav-item:hover {
+    background: rgba(255,255,255,0.1);
+    color: var(--text-light);
+}
+
+.nav-item.active {
+    background: var(--bg-color);
+    color: var(--ui-header);
+    font-weight: bold;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+}
+
+.nav-item.add-btn {
+    margin-top: 20px;
+    border: 2px dashed rgba(255,255,255,0.5);
+}
+
+.nav-item.add-btn:hover {
+    border-color: var(--text-light);
+    background: rgba(255,255,255,0.2);
+}
+
+.nav-item:hover {
+    background: rgba(255,255,255,0.1);
+    color: var(--text-light);
+    transform: translateX(6px); /* <--- This adds the pop to the right! */
+}
+
+.nav-item.active {
+    background: var(--bg-color);
+    color: var(--ui-header);
+    font-weight: bold;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+    transform: translateX(2px); /* Keeps the active tab slightly bumped out */
+}
