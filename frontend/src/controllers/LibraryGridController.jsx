@@ -2,6 +2,11 @@ import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { backend } from '../services/controller';
 import LibraryGrid from '../components/LibraryGrid';
 
+import { HistoryManager } from '../utils/HistoryManager';
+import MediaPlayer from '../components/viewers/MediaPlayer';
+import PDFViewer from '../components/viewers/PDFViewer';
+import EpubViewer from '../components/viewers/EpubViewer';
+
 const ITEMS_PER_PAGE = 30; 
 const ROWS_PER_CHUNK = 3; // How many tag rows to load at a time
 
@@ -18,6 +23,35 @@ export default function LibraryGridController({ libraryId, onSelectSeries }) {
     const [isLoadingRows, setIsLoadingRows] = useState(false);
     
     const loadedCache = useRef(new Set());
+
+    // History State for the Continue Row
+    const [recentHistory, setRecentHistory] = useState([]);
+    const [resumeItem, setResumeItem] = useState(null);
+
+    // On mount, load the recent history for the Continue Watching row
+    useEffect(() => {
+        setRecentHistory(HistoryManager.getHistory());
+    }, []);
+
+    // THE VIEWER MODAL LOGIC
+    const renderViewer = () => {
+        if (!resumeItem) return null;
+        
+        const closePreview = () => {
+            setResumeItem(null);
+            setRecentHistory(HistoryManager.getHistory()); // Instantly updates the progress bar!
+        };
+
+        const asset = { id: resumeItem.fileId, filename: resumeItem.filename, title: resumeItem.filename };
+        const dummyEntry = { id: resumeItem.entryId, title: resumeItem.entryTitle };
+
+        if (resumeItem.type === 'video') return <MediaPlayer playlist={[asset]} startIndex={0} entry={dummyEntry} onClose={closePreview} />;
+        if (resumeItem.type === 'pdf') return <PDFViewer asset={asset} entry={dummyEntry} onClose={closePreview} />;
+        if (resumeItem.type === 'epub') return <EpubViewer asset={asset} entry={dummyEntry} onClose={closePreview} />;
+        return null;
+    };
+
+
 
     // 1. Initial Mount: Fetch all entries (for search/top row) and all tags
     useEffect(() => {
@@ -98,25 +132,30 @@ export default function LibraryGridController({ libraryId, onSelectSeries }) {
     }, [filteredEntries, tagCategories]);
 
     return (
-        <LibraryGrid
-            searchQuery={searchQuery}
-            setSearchQuery={setSearchQuery}
-            sortBy={sortBy}
-            setSortBy={setSortBy}
-            filteredEntries={filteredEntries}       
-            paginatedEntries={paginatedEntries}     
-            categories={categories}
-            isSearching={searchQuery.length > 0}
-            loadedCache={loadedCache}
-            onSelectSeries={onSelectSeries}
-            currentPage={currentPage}
-            totalPages={totalPages}
-            handlePageChange={handlePageChange}
-            
-            // New Lazy Loading Props
-            loadMoreTagRows={loadMoreTagRows}
-            hasMoreTags={loadedTagsCount < tags.length}
-            isLoadingRows={isLoadingRows}
-        />
+        <>
+            <LibraryGrid
+                searchQuery={searchQuery}
+                setSearchQuery={setSearchQuery}
+                sortBy={sortBy}
+                setSortBy={setSortBy}
+                filteredEntries={filteredEntries}       
+                paginatedEntries={paginatedEntries}     
+                categories={categories}
+                isSearching={searchQuery.length > 0}
+                loadedCache={loadedCache}
+                onSelectSeries={onSelectSeries}
+                currentPage={currentPage}
+                totalPages={totalPages}
+                handlePageChange={handlePageChange}
+                
+                // New Lazy Loading Props
+                loadMoreTagRows={loadMoreTagRows}
+                hasMoreTags={loadedTagsCount < tags.length}
+                isLoadingRows={isLoadingRows}
+                recentHistory={recentHistory}
+                onResume={(item) => setResumeItem(item)}
+            />
+            {renderViewer()}
+        </>
     );
 }

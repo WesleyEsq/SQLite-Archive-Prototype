@@ -12,7 +12,7 @@ import SettingsModal from './components/modals/SettingsModal';
 import EntryListController from './controllers/EntryListController';
 import LibraryGridController from './controllers/LibraryGridController';
 import SeriesDetailController from './controllers/SeriesDetailController';
-import VaultController from './controllers/VaultController'; // <-- ADDED MISSING IMPORT!
+import VaultController from './controllers/VaultController'; 
 
 // --- Icons ---
 import { 
@@ -30,7 +30,7 @@ function App() {
     const [activeLibraryId, setActiveLibraryId] = useState(1); 
     
     // Your app uses 'view' to track the current page!
-    const [view, setView] = useState('list'); 
+    const [view, setView] = useState('about'); 
     const [isAddingNew, setIsAddingNew] = useState(false);
     const [selectedSeries, setSelectedSeries] = useState(null);
     const [showSettings, setShowSettings] = useState(false);
@@ -59,17 +59,24 @@ function App() {
 
                 <div className="sidebar-nav">
                     <button 
-                        className={`nav-item ${isActive('list') ? 'active' : ''}`} 
-                        onClick={() => { setView('list'); setIsAddingNew(false); }}
+                        className={`nav-item ${isActive('about') ? 'active' : ''}`} 
+                        onClick={() => { setView('about'); setIsAddingNew(false); }}
                     >
-                        <List size={20} /> List View
+                        <Info size={20} /> About
                     </button>
-                    
+
                     <button 
                         className={`nav-item ${isActive('library') || view === 'series_detail' ? 'active' : ''}`} 
                         onClick={() => { setView('library'); setIsAddingNew(false); }}
                     >
                         <Grid size={20} /> Library
+                    </button>
+                    
+                    <button 
+                        className={`nav-item ${isActive('list') ? 'active' : ''}`} 
+                        onClick={() => { setView('list'); setIsAddingNew(false); }}
+                    >
+                        <List size={20} /> List View
                     </button>
 
                     {/* FIXED: Changed activeTab to view and setActiveTab to setView */}
@@ -78,13 +85,6 @@ function App() {
                         onClick={() => { setView('vault'); setIsAddingNew(false); }}
                     >
                         <Database size={20} /> File storage
-                    </button>
-                    
-                    <button 
-                        className={`nav-item ${isActive('about') ? 'active' : ''}`} 
-                        onClick={() => { setView('about'); setIsAddingNew(false); }}
-                    >
-                        <Info size={20} /> About
                     </button>
 
                     <button className="nav-item add-btn" onClick={handleAddNew}>

@@ -19,9 +19,9 @@ export default function LibraryCategoryRow({ title, entries, onSelectSeries, loa
 
     return (
         <div className="category-row" style={{ marginBottom: '40px', width: '100%' }}>
-            <h3 className="section-title" style={{ paddingLeft: '30px' }}>
+            <h1 className="section-title" style={{ paddingLeft: '30px' }}>
                 {title} <span className="count-badge">{entries.length}</span>
-            </h3>
+            </h1>
             
             {/* 1. INCREASED HEIGHT TO 480px to fit the hover animation and scrollbar */}
             <div className="carousel-wrapper" style={{ height: '480px', position: 'relative', width: '100%' }}>

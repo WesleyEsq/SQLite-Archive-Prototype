@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { GetLibrary, UpdateLibrary, SetLibraryCover } from '../../wailsjs/go/backend/App';
+import { Pencil } from 'lucide-react'; // <-- Add this import
 
 export default function CompendiumView({ libraryId }) {
     const [data, setData] = useState(null);
@@ -24,11 +25,9 @@ export default function CompendiumView({ libraryId }) {
         }).catch(err => alert("Failed to save: " + err));
     };
 
-    // Replaces the old FileReader with the native Wails OS dialog
     const handleUpdateCover = async () => {
         try {
             await SetLibraryCover(libraryId);
-            // Add a timestamp to the state to force the <img> tag to bypass the browser cache
             setFormData(prev => ({ ...prev, _t: Date.now() })); 
         } catch (err) {
             console.error("Failed to update cover:", err);
@@ -37,37 +36,51 @@ export default function CompendiumView({ libraryId }) {
 
     if (!data) return <div className="loading-state">Loading...</div>;
 
+    const coverUrl = `/images/library/${libraryId}?t=${formData._t || Date.now()}`;
+
     return (
-        <div className="about-container">
-            <div className="about-card">
-                <div className="about-image-section">
-                    <img 
-                        src={`/images/library/${libraryId}?t=${formData._t || Date.now()}`} 
-                        alt={data.name} 
-                        className="about-cover-image" 
-                        onError={(e) => { e.target.src = '/default-cover.png'; }}
-                    />
+        <div className="about-container custom-scrollbar">
+            
+            {/* 1. THE DYNAMIC CRIMSON BANNER */}
+            <div className="about-hero-banner">
+                <div className="about-hero-backdrop" style={{ backgroundImage: `url(${coverUrl})` }} />
+                <div className="about-hero-overlay" />
+            </div>
+
+            {/* 2. THE CENTERPIECE (Pulled up via negative margin) */}
+            <div className="about-content-wrapper">
+                <img 
+                    src={coverUrl} 
+                    alt={data.name} 
+                    className="about-cover-image" 
+                    onError={(e) => { e.target.src = '/default-cover.png'; }}
+                />
+
+                {/* 3. GRAND TYPOGRAPHY */}
+                <div className="about-header-text">
+                    <h1>{data.name}</h1>
+                    <h3>Curated by {data.author || "Unknown"}</h3>
+                    
+                    <button className="about-edit-btn" onClick={() => setIsEditing(true)} title="Edit Library Details">
+                        <Pencil size={20} />
+                    </button>
                 </div>
-                
-                <div className="about-info-section">
-                    <div className="about-header">
-                        <div>
-                            {/* Note: struct field is Name, not Title */}
-                            <h1>{data.name}</h1>
-                            <h3>by {data.author || "Unknown"}</h3>
-                        </div>
-                        <button className="edit-icon-btn" onClick={() => setIsEditing(true)} title="Edit Details">
-                            ✎
-                        </button>
-                    </div>
-                    <hr className="divider"/>
-                    <p className="about-description" style={{ textAlign: 'justify' }}>
-                        {data.description || "No description provided."}
-                    </p>
+
+                {/* 4. THE PREFACE */}
+                <div className="about-description-area">
+                    {data.description ? (
+                        data.description.split('\n').map((paragraph, index) => (
+                            <p key={index} style={{ marginBottom: '1.2em' }}>{paragraph}</p>
+                        ))
+                    ) : (
+                        <p style={{ fontStyle: 'italic', color: '#999', textAlign: 'center' }}>
+                            Welcome to your digital library. Click the edit button above to add a description.
+                        </p>
+                    )}
                 </div>
             </div>
 
-            {/* --- PROFESSIONAL EDIT MODAL --- */}
+            {/* --- PROFESSIONAL EDIT MODAL (Unchanged) --- */}
             {isEditing && (
                 <div className="modal-overlay">
                     <div className="modal-content pro-modal">
@@ -82,12 +95,11 @@ export default function CompendiumView({ libraryId }) {
                                 <label>Cover Art</label>
                                 <div className="image-preview-wrapper">
                                     <img 
-                                        src={`/images/library/${libraryId}?t=${formData._t || Date.now()}`} 
+                                        src={coverUrl} 
                                         alt="Preview" 
                                         onError={(e) => { e.target.src = '/default-cover.png'; }}
                                     />
                                     <div className="image-overlay-actions">
-                                        {/* Swapped label/input for a direct Wails button */}
                                         <button className="upload-btn" onClick={handleUpdateCover} style={{cursor: 'pointer'}}>
                                             Change Image (OS)
                                         </button>

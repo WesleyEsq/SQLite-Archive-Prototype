@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { HistoryManager } from '../../utils/HistoryManager'; // <-- The missing import!
 
-export default function MediaPlayer({ playlist, startIndex, onClose }) {
+export default function MediaPlayer({ playlist, startIndex, entry, onClose }) { // <-- Accept entry prop
     const [currentIndex, setCurrentIndex] = useState(startIndex);
     const [showControls, setShowControls] = useState(true);
     
@@ -33,22 +34,31 @@ export default function MediaPlayer({ playlist, startIndex, onClose }) {
         const video = videoRef.current;
         if (!video) return;
 
-        const storageKey = `gogl_progress_${asset.id}`;
-        
+        // 1. Load the saved time from the Global History Manager
         const loadSavedTime = () => {
-            const savedTime = localStorage.getItem(storageKey);
-            if (savedTime) video.currentTime = parseFloat(savedTime);
+            const history = HistoryManager.getHistory();
+            const savedItem = history.find(h => h.fileId === asset.id);
+            if (savedItem && savedItem.resumeData) {
+                video.currentTime = parseFloat(savedItem.resumeData);
+            }
+        };
+
+        // 2. Save the time AND calculate the percentage!
+        const saveTime = () => {
+            if (video.duration) {
+                const percentage = (video.currentTime / video.duration) * 100;
+                HistoryManager.saveProgress(asset, entry, percentage, 'video', video.currentTime);
+            }
         };
 
         video.addEventListener('loadedmetadata', loadSavedTime);
-        const saveTime = () => localStorage.setItem(storageKey, video.currentTime);
         video.addEventListener('timeupdate', saveTime);
 
         return () => {
             video.removeEventListener('loadedmetadata', loadSavedTime);
             video.removeEventListener('timeupdate', saveTime);
         };
-    }, [asset.id]);
+    }, [asset.id, entry]); // <-- Added entry to dependency array
 
     // --- HANDLERS ---
     const handleNext = () => {
@@ -60,7 +70,8 @@ export default function MediaPlayer({ playlist, startIndex, onClose }) {
     };
 
     const handleVideoEnd = () => {
-        localStorage.removeItem(`gogl_progress_${asset.id}`);
+        // Clear progress when finished so it drops off the "Continue" row
+        HistoryManager.clearProgress(asset.id);
         if (currentIndex < playlist.length - 1) handleNext();
     };
 
@@ -87,9 +98,7 @@ export default function MediaPlayer({ playlist, startIndex, onClose }) {
                     controls 
                     autoPlay 
                     onEnded={handleVideoEnd}
-                    // REMOVED: crossOrigin="anonymous" to prevent CORS blocking
                 >
-                    {/* REMOVED: type={asset.mime_type} to force browser sniffing */}
                     <source src={streamUrl} />
                     Your browser does not support the video tag.
                 </video>

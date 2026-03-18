@@ -1,60 +1,142 @@
-/* --- About / Compendium Page --- */
+/* src/styles/4-views/about.css */
+
 .about-container {
     flex-grow: 1;
-    display: flex;
-    justify-content: center;
-    padding: 40px;
-    background-color: var(--bg-color);
     overflow-y: auto;
+    background-color: var(--bg-color);
+    position: relative;
+    padding-bottom: 80px;
 }
 
-.about-card {
-    display: flex;
-    flex-direction: row;
-    background-color: white;
+/* =========================================
+   1. THE CRIMSON BANNER (Top 40%)
+   ========================================= */
+.about-hero-banner {
+    position: relative;
     width: 100%;
-    max-width: 900px;
-    height: fit-content;
-    box-shadow: 0 10px 30px rgba(128, 15, 47, 0.1);
-    border-radius: 12px;
+    height: 40vh; /* Takes up 40% of the viewport height */
+    min-height: 300px;
+    background-color: var(--header-bg);
     overflow: hidden;
-    border: 1px solid rgba(0,0,0,0.05);
+    display: flex;
+    justify-content: center;
 }
 
-.about-image-section {
-    flex: 0 0 350px;
-    background-color: var(--row-color-1);
+/* The scaled-up, blurry cover art for ambiance */
+.about-hero-backdrop {
+    position: absolute;
+    top: -20%; left: -20%;
+    width: 140%; height: 140%;
+    background-size: cover;
+    background-position: center;
+    filter: blur(50px);
+    opacity: 0.6;
+    z-index: 0;
+}
+
+/* The Crimson Glass Overlay */
+.about-hero-overlay {
+    position: absolute;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: linear-gradient(135deg, rgba(128, 15, 47, 0.9) 0%, rgba(201, 24, 74, 0.75) 100%);
+    z-index: 1;
+}
+
+/* =========================================
+   2. THE CENTERPIECE (Overlapping Content)
+   ========================================= */
+.about-content-wrapper {
+    position: relative;
+    z-index: 10;
+    max-width: 900px;
+    /* This pulls the content UP into the banner */
+    margin: -150px auto 0 auto; 
     display: flex;
+    flex-direction: column;
     align-items: center;
-    justify-content: center;
-    padding: 30px;
-    border-right: 1px solid var(--border-color);
+    padding: 0 30px;
 }
 
 .about-cover-image {
-    width: 100%; height: auto; max-height: 500px; object-fit: contain;
-    border-radius: 8px; box-shadow: 0 5px 15px rgba(0,0,0,0.2); background-color: white;
+    width: 280px;
+    height: 280px;
+    object-fit: cover;
+    border-radius: 16px;
+    border: 5px solid white;
+    background-color: white;
+    margin-bottom: 40px;
+    z-index: 20;
 }
 
-.about-info-section { flex: 1; padding: 40px; display: flex; flex-direction: column; }
-
-.about-header { display: flex; justify-content: space-between; align-items: flex-start; }
-.about-header h1 { margin: 0; color: var(--header-bg); font-size: 2.5em; font-weight: 800; }
-.about-header h3 { margin: 10px 0 0 0; color: var(--ui-header); font-size: 1.2em; font-weight: 600; }
-
-.edit-icon-btn {
-    background: none; border: 2px solid var(--border-color); color: var(--ui-header);
-    font-size: 1.2em; width: 40px; height: 40px; border-radius: 50%;
-    cursor: pointer; display: flex; align-items: center; justify-content: center; transition: all 0.2s;
-}
-.edit-icon-btn:hover { background-color: var(--ui-header); color: white; border-color: var(--ui-header); }
-
-.about-description {
-    font-size: 1.1em; line-height: 1.8; color: #444; white-space: pre-wrap;
+/* =========================================
+   3. GRAND TYPOGRAPHY
+   ========================================= */
+.about-header-text {
+    text-align: center;
+    margin-bottom: 50px;
+    position: relative;
+    width: 100%;
 }
 
-@media (max-width: 900px) {
-    .about-card { flex-direction: column; }
-    .about-image-section { flex: none; padding: 20px; border-right: none; border-bottom: 1px solid var(--border-color); }
-    .about-cover-image { max-height: 300px; }
+.about-header-text h1 {
+    font-size: 3.5rem;
+    font-weight: 900;
+    color: var(--text-color);
+    margin: 0 0 10px 0;
+    letter-spacing: -1px;
+    line-height: 1.2;
+}
+
+.about-header-text h3 {
+    font-size: 1.1rem;
+    color: var(--ui-header);
+    margin: 0;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+}
+
+/* Elegant Edit Button tucked to the side */
+.about-edit-btn {
+    position: absolute;
+    top: 50%;
+    right: 20px;
+    transform: translateY(-50%);
+    background: white;
+    border: 1px solid #eee;
+    color: var(--ui-header);
+    width: 45px; height: 45px;
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    cursor: pointer;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.05);
+    transition: all 0.2s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+}
+
+
+
+/* =========================================
+   4. THE PREFACE (Description)
+   ========================================= */
+.about-description-area {
+    width: 100%;
+    max-width: 1000px; /* Constrained for perfect reading width */
+    font-size: 1.2rem;
+    line-height: 1.8;
+    color: #444;
+    text-align: justify;
+    position: relative;
+}
+
+/* Subtle decorative line above the text */
+.about-description-area::before {
+    content: '';
+    position: absolute;
+    top: -25px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 60px;
+    height: 3px;
+    background-color: var(--ui-header);
+    border-radius: 2px;
 }

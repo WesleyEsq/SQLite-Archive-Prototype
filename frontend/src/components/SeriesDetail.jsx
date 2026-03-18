@@ -58,9 +58,9 @@ export default function SeriesDetail({
             </DragDropContext>
 
             {/* VIEWER MODALS */}
-            {viewerContext?.type === 'video' && <MediaPlayer playlist={viewerContext.playlist} startIndex={viewerContext.startIndex} onClose={closeViewer} />}
-            {viewerContext?.type === 'pdf' && <PDFViewer asset={viewerContext.asset} onClose={closeViewer} />}
-            {viewerContext?.type === 'epub' && <EpubViewer asset={viewerContext.asset} onClose={closeViewer} />}
+            {viewerContext?.type === 'video' && <MediaPlayer playlist={viewerContext.playlist} startIndex={viewerContext.startIndex} entry={entry} onClose={closeViewer} />}
+            {viewerContext?.type === 'pdf' && <PDFViewer asset={viewerContext.asset} entry={entry} onClose={closeViewer} />}
+            {viewerContext?.type === 'epub' && <EpubViewer asset={viewerContext.asset} entry={entry} onClose={closeViewer} />}
         </div>
     );
 }

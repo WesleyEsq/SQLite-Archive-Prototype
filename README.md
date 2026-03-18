@@ -1,173 +1,106 @@
+# Compendium, an object storage personal project for a digital library
 
-# Compendium | Storage system prototype with an emphasis on metadata
+## Overview
 
-[Presiona aquí para leer la documentación en español](./spanish_documentation/README.md)
+Compendium is a desktop application designed for cataloging, organizing, and consuming local digital media. Built using the Wails framework, it utilizes a Go backend for file system operations and database management, paired with a React frontend for the user interface. The system supports hierarchical media organization, a virtual file management system, and integrated consumption of various file types including video, EPUB, PDF, and image formats.
 
-## Welcome!
+## Architecture & Tech Stack
 
-The purpose of this project is to develop a completely local digital Archive for the automatic preservation and organization of multimedia files.
+* **Application Framework:** Wails (v2)
+* **Backend:** Go (Golang)
+* **Database:** SQLite (Local storage for metadata, virtual paths, and file blobs)
+* **Frontend:** React 18, Vite
+* **Styling:** Native CSS with CSS Variables (Custom modular architecture)
+* **Key Frontend Libraries:** * `react-virtuoso` (Virtualized list rendering for large libraries)
+  * `@hello-pangea/dnd` (Drag-and-drop state management)
+  * `react-reader` / `epubjs` (EPUB rendering)
+  * `lucide-react` (System iconography)
 
-The project is designed for the personal preservation of both the files and a large amount of metadata about them. It is based on the organization of giants like YouTube, S3, and Google Drive, only completely local and compact.
+## Core Features
 
----
+### 1. Library Management
 
-## File Visualization Support
+* **Entries:** The top-level organizational unit. Entries contain metadata including title, comment, rank, description, and cover art.
+* **Collections & Assets:** Entries can contain multiple "Collections" (e.g., Seasons, Volumes). Collections act as containers for "Assets" (the actual media files).
+* **Tags & Categories:** Entries can be tagged. Specific tags can be designated as "Categories," which dynamically generate horizontally scrollable rows in the main library view.
 
-| Medium | Formats that can be visualized | Future additions |
-| --- | --- | --- |
-| Audio |  | wav, mp3, AIFF, AAC, OGG |
-| Images | PNG, JPEG, WebP, GIF, TIFF | SVG |
-| Videos | MP4, WebM |  |
-| Documents | PDF, Epub | Docx, HTML |
-| Ebooks | Epub | Sequences of images |
+### 2. The Vault (Virtual File System)
 
-Any other file format can be stored and downloaded in the system, but support is only provided to visualize these files with the interface.
+* A dedicated file management interface independent of the Library grid.
+* Implements a virtual directory structure using path strings (e.g., `/images/covers/`) rather than strictly relational folder tables.
+* Supports standard CRUD operations: Create folders (via `.keep` files), move files via drag-and-drop, rename, delete, and native OS file uploads.
 
----
+### 3. Integrated Media Viewers
 
-## About Compendium
+The application streams media directly from the local Go backend to custom frontend wrapper components:
 
-This project is born from the need to go beyond simple spreadsheets and browser bookmarks. It is a robust desktop application designed to be a "digital sanctuary" for your personal media collection (Books, Artworks, Series, Light Novels, and more).
+* **Video Player:** Custom HTML5 video wrapper with playlist support, navigation, and resume states.
+* **EPUB Reader:** Integrated paginated reading view.
+* **PDF Viewer:** Native iframe-based PDF rendering.
+* **Image Viewer:** Modal-based high-resolution image viewing.
 
-Built on the power of Go and the flexibility of React, this prototype combines the speed of an embedded database with a modern "streaming-style" interface. It is a living digital bookshelf designed for preservation, portability, and aesthetics.
+### 4. History & Progress Tracking
 
-Multimedia elements and the metadata about them are automatically organized into a hierarchical structure to facilitate their collection and integrity on a large scale.
+* A centralized `HistoryManager` tracks user interaction with media files.
+* Records exact playback timestamps (Video), CFI locations (EPUB), or generic open states (PDF/Image).
+* Automatically calculates completion percentages and populates a "Continue Watching/Reading" row in the main library grid.
 
----
+### 5. Data Portability
 
-## How to compile the project
-
-It is expected that a flatpak will be developed for this project for its distribution once it is complete. For now, it is possible to compile it manually.
-**The following is required:**
-
-1. Install a Go version higher than 1.20
-2. Install the Wails library
-3. Run the following command inside this repository directory:
-
-* `wails dev`
-
-
-
-*note: in case there is an error due to the use of webkit with Wails, you must specify the webkit version installed on the operating system. In the case of Fedora KDE 43, for example, the necessary command is `wails dev -tags webkit2gtk-4.1*`
-
----
-
-## Goals of this project
-
-It is expected to continue with this prototype by implementing the following goals to allow practical use of the storage it provides.
-
-**The goals are as follows:**
-
-1. Compatibility with Google Drive and OneDrive personal cloud storage.
-2. Backup storage via S3.
-3. Better operability with the operating system to view media outside the React application using the following tools:
-    * Adobe Acrobat
-    * VLC
-
-4. Functionality to export all database data into a hierarchical directory just like in the system.
-5. Robust backup system.
-
----
+* Legacy CSV import support for migrating external databases.
+* CSV export support for library metadata backups.
 
 ## Project Structure
 
-The project follows the standard **Wails** architecture, clearly separating the backend logic (Go) from the user interface (JavaScript/React). Below is a summary of the key directories:
+The documentation is split hierarchically to reflect the separation of concerns within the application.
 
-* **`root /`**: The heart of the backend.
-* `main.go`: Entry point. Configures the window, assets, and file server.
-* `app.go`: The "Controller". Connects the frontend with the database and exposes methods to JS.
-* `database.go`: SQLite connection management, migrations, and general queries.
-* `media.go`: Specific logic for handling multimedia files (Hierarchy: Series -> Volumes -> Chapters).
-* **`frontend/`**: The user interface (SPA built with Vite + React).
-* **`src/components/`**: Modular React components.
-* `LibraryGrid.jsx`: The "Netflix-style" gallery view with lazy loading.
-* `SeriesDetail.jsx`: The details page, file and metadata management.
-* `EntryList.jsx`: The classic table view for quick management and ranking.
-* **`src/styles/`**: Modular CSS system.
-* Divided into specific files (`layout.css`, `library.css`, `variables.css`) to keep the code clean and maintainable.
-* **`wailsjs/`**: Auto-generated bridge between Go and JavaScript. Here reside the promises that connect both worlds.
-* **`build/`**: Compilation artifacts and packaging configuration for Windows/Mac/Linux.
-* **`compendium.db`**: (Generated) The single file that contains your entire database and saved files.
+```text
+compendium/
+├── README.md                 # System overview (This file)
+├── backend/                  # Go backend source code
+│   └── README-BACKEND.md     # Backend architecture, DB schema, and API bindings
+├── frontend/                 # React frontend source code
+│   ├── README-FRONTEND.md    # Frontend architecture, state management, and routing
+│   └── src/
+│       ├── components/       # UI Components (Documented in Frontend README)
+│       ├── controllers/      # Logic and State Controllers
+│       ├── hooks/            # Custom React Hooks
+│       ├── services/         # Wails API bridge methods
+│       ├── styles/           # Modular CSS structure
+│       └── utils/            # Helper functions (History, Validators)
+├── wails.json                # Wails project configuration
+└── go.mod                    # Go dependencies
+```
 
----
+## Getting Started
 
-## Purpose and Philosophy of the Project
+### Prerequisites
 
-The purpose of Compendium is to solve the problem of **digital preservation** with a superior user experience.
+* [Go](https://go.dev/doc/install) (1.18 or later)
+* [Node.js](https://nodejs.org/en/) (16 or later)
+* [Wails CLI](https://wails.io/docs/gettingstarted/installation)
 
-The project maintains **compactness** as its main goal, providing a highly scalable solution without the need for containers, database servers, pods, or third-party services, making it a secure alternative for a user.
+### Installation & Execution
 
-### 1. Local-First Preservation
+1. Clone the repository.
+2. Navigate to the root directory.
+3. To run the application in development mode (with hot-reloading for the frontend):
 
-In the digital age, cloud content is ephemeral. Favorite series can disappear due to licensing or website closures. This project bets on local storage:
+   ```bash
+   wails dev
+   ```
 
-* **Database as a File System:** Unlike traditional managers that only save file paths, files (PDF, EPUB, Images) are ingested directly into the SQLite database.
-* **Total Portability:** Because everything resides in a single `.db` file, backing up your entire library is as simple as copying one file.
+4. To build the compiled executable for your target operating system:
 
-### 2. Aesthetics and Functionality
+   ```bash
+   wails build
+   ```
 
-Spreadsheets are efficient, but boring. The goal is to emulate the experience of modern streaming platforms:
+## In depth documentation
 
-* **Visual Navigation:** Large covers, progressive loading, and a grid layout.
-* **Media Hierarchy:** Understands that a work is not a single file. Supports complex structures: *Series → Seasons/Volumes → Episodes/Chapters*.
-* **Flexible Organization:** Allows sorting content by ranking (Tier Lists), numerical order, or instant search.
+To see the documentation about the system, it's divided in the docs directory on this repository based on if it's either about the backend or the front end. The system has the following two files to direct the documentation:
 
-### 3. Privacy and Ethics
-
-This is software strictly for **personal use** to organize local files. It does not connect to any network or share its data with other users. It is a passive tool to organize what the user already owns, acting as a secure and personal digital bookshelf.
-
-Therefore, decisions have been made to guarantee a better local experience on a machine, at the cost of a hostile architecture against streaming data to other devices.
-
----
-
-## Architecture and Technical Specifications
-
-Compendium is a high-performance hybrid application. This section details the engineering decisions, data schema, and design patterns used to achieve a smooth experience handling heavy multimedia files.
-
-### 1. Technology Stack
-
-The choice of technologies prioritizes three pillars: **Portability** (a single binary), **Performance** (low RAM usage), and **Modernity** (reactive UI).
-
-| Layer | Technology | Justification |
-| --- | --- | --- |
-| **Core / Backend** | **Go (Golang) 1.21+** | Offers static typing, native concurrency, and compilation to machine code without external dependencies (Static linking). |
-| **Frontend** | **React 18 + Vite** | Robust ecosystem for SPAs. Vite provides instant compilation time, and React manages complex UI state. |
-| **Bridge** | **Wails v2** | Lightweight alternative to Electron. Uses the OS native rendering engine (WebView2 on Windows, WebKit on Mac), drastically reducing executable size and RAM usage. |
-| **Database** | **SQLite (ModernC)** | Version of SQLite transpiled to pure Go (no CGO). Eliminates the need to install C compilers (GCC) on Windows, facilitating cross-compilation. |
-| **Styles** | **CSS Modules (Custom)** | Custom design system without heavy frameworks (like Tailwind or Bootstrap) for total visual control. |
+* [Visual components on the front-end Desktop Interface](./docs/frontend/readme_frontend.md)
+* [Server, database, storage and streaming logic](./docs/backend/Readme_backend.md)
 
 ---
-
-### 2. Database Design (Schema)
-
-The heart of the project is its **SQLite** database. Unlike traditional applications that save file paths (`C:/Users/...`), Compendium stores the binary files (Images, PDFs, EPUBs) directly inside the database as **BLOBS**.
-
-### "All in One" Strategy
-
-* **Advantage:** Absolute portability. Moving your collection to another PC means copying a single `.db` file.
-* **Challenge:** Read performance is inferior to using the file system for storing blobs larger than 100Kb.
-* **Solution:** Implementation of a Go sidecar server for reading and fetching multimedia objects in the database. Works very similarly to S3 services.
-
-## 3. Wails and the relationship between Go and React
-
-Communication between Go and JavaScript is asynchronous and secure, managed through `wailsjs`.
-
-* **Method Exporting:** The `App` struct in `app.go` acts as the main controller. Any public method (e.g., `GetEntries()`) is automatically exposed to JavaScript as a Promise.
-* **Type Handling:** Wails automatically generates TypeScript definitions (`models.ts`) based on the Go structs, ensuring the frontend knows exactly what data to expect.
-
-**Data Flow:**
-
-> `UI (React)` invokes `SaveMediaAsset()` **➜** `Wails Bridge` serializes JSON **➜** `Go Controller` decodes Base64 **➜** `SQLite` writes BLOB **➜** Response to the UI.
-
----
-
-## 4. Frontend Modularity
-
-React code demands great specialization in terms of the styles of each component, they are organized according to each reusable element in the project structure. They can share styles with each other or use a global style defined for the whole project. For the purpose of this project, we have the following UI element disposition:
-
-* **Modular CSS:** Styles are divided by responsibility (`layout.css`, `library.css`, `modals.css`).
-* **Atomic Components:** `LibraryGrid`, `SeriesDetail`, and `EntryList` work in isolation, receiving data only through *props*, facilitating testing and debugging.
-
----
-
-This technical documentation requires expansion for future iterations of this prototype.

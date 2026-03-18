@@ -4,13 +4,14 @@ import { ChevronLeft, ChevronRight } from 'lucide-react';
 import LibraryToolbar from './library-grid/LibraryToolbar';
 import LibraryCard from './library-grid/LibraryCard';
 import LibraryCategoryRow from './library-grid/LibraryCategoryRow';
+import HistoryRow from './library-grid/HistoryRow';
 
 export default function LibraryGrid({ 
     searchQuery, setSearchQuery, sortBy, setSortBy, 
     filteredEntries, paginatedEntries, categories, isSearching, 
     loadedCache, onSelectSeries,
     currentPage, totalPages, handlePageChange,
-    loadMoreTagRows, hasMoreTags, isLoadingRows
+    loadMoreTagRows, hasMoreTags, isLoadingRows, recentHistory, onResume
 }) {
     return (
         <div className="library-wrapper">
@@ -26,9 +27,9 @@ export default function LibraryGrid({
                     /* --- SEARCH MODE (Grid) --- */
                     <div style={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px 30px' }}>
-                            <h3 className="section-title" style={{ margin: 0 }}>
+                            <h2 className="section-title" style={{ margin: 0 }}>
                                 Search Results ({filteredEntries.length})
-                            </h3>
+                            </h2>
                             
                             {totalPages > 1 && (
                                 <div style={{ display: 'flex', alignItems: 'center', gap: '15px' }}>
@@ -78,7 +79,21 @@ export default function LibraryGrid({
                     <div className="custom-scrollbar" style={{ height: '100%', width: '100%', overflowY: 'auto' }}>
                         
                         {/* Map all currently loaded categories */}
-                        {categories.map(category => (
+                        {categories.length > 0 && (
+                            <LibraryCategoryRow 
+                                key={categories[0].id}
+                                title={categories[0].title}
+                                entries={categories[0].entries}
+                                onSelectSeries={onSelectSeries}
+                                loadedCache={loadedCache}
+                            />
+                        )}
+
+                        {/* 2. Render the Slim History Row SECOND */}
+                        <HistoryRow historyItems={recentHistory} onResume={onResume} />
+
+                        {/* 3. Render the remaining Tag Categories THIRD */}
+                        {categories.slice(1).map(category => (
                             <LibraryCategoryRow 
                                 key={category.id}
                                 title={category.title}
