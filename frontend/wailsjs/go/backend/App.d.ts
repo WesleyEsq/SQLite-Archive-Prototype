@@ -23,6 +23,8 @@ export function DeleteVaultFile(arg1:number):Promise<void>;
 
 export function DeleteVaultFolder(arg1:string):Promise<void>;
 
+export function ExportBackup():Promise<string>;
+
 export function ExportLibraryCSV(arg1:number):Promise<string>;
 
 export function ExportMediaAsset(arg1:number,arg2:string):Promise<void>;
@@ -30,6 +32,8 @@ export function ExportMediaAsset(arg1:number,arg2:string):Promise<void>;
 export function GetAllTags():Promise<Array<backend.Tag>>;
 
 export function GetAllVaultFiles():Promise<Array<backend.File>>;
+
+export function GetDatabaseStats():Promise<backend.DBStats>;
 
 export function GetEntries(arg1:number):Promise<Array<backend.Entry>>;
 
@@ -56,6 +60,8 @@ export function PromptAndUploadVaultFile(arg1:string):Promise<void>;
 export function RenameVaultFile(arg1:number,arg2:string):Promise<void>;
 
 export function RenameVaultFolder(arg1:string,arg2:string):Promise<void>;
+
+export function RunDatabaseMaintenance():Promise<void>;
 
 export function SaveEntry(arg1:backend.Entry):Promise<void>;
 

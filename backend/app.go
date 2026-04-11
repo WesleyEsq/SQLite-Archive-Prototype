@@ -13,14 +13,16 @@ import (
 
 // App struct
 type App struct {
-	ctx context.Context
-	db  *DB
+	ctx    context.Context
+	db     *DB
+	dbPath string
 }
 
 // NewApp creates a new App application struct
-func NewApp(db *DB) *App {
+func NewApp(db *DB, dbPath string) *App {
 	return &App{
-		db: db,
+		db:     db,
+		dbPath: dbPath,
 	}
 }
 
@@ -398,4 +400,28 @@ func (a *App) RenameVaultFolder(oldPath, newPath string) error {
 // DeleteVaultFolder removes the folder and all its contents from the vault.
 func (a *App) DeleteVaultFolder(path string) error {
 	return a.db.DeleteVaultFolder(path)
+}
+
+func (a *App) GetDatabaseStats() (DBStats, error) {
+	return a.db.GetStats(a.dbPath)
+}
+
+func (a *App) RunDatabaseMaintenance() error {
+	return a.db.Optimize()
+}
+
+func (a *App) ExportBackup() (string, error) {
+	targetPath, err := runtime.SaveFileDialog(a.ctx, runtime.SaveDialogOptions{
+		Title:           "Export Backup",
+		DefaultFilename: "compendium_backup.db",
+		Filters:         []runtime.FileFilter{{DisplayName: "SQLite", Pattern: "*.db"}},
+	})
+	if err != nil || targetPath == "" {
+		return "Cancelled", nil
+	}
+
+	if err := a.db.BackupLive(targetPath); err != nil {
+		return "", err
+	}
+	return "Backup created successfully!", nil
 }

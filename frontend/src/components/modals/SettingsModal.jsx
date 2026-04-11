@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import TagSettings from '../settings/TagSettings';
+import DataSettings from '../settings/DataSettings';
 // Import icons for the sidebar
 import { Tag, Database, Settings as GearIcon, Info } from 'lucide-react';
 
@@ -10,8 +11,7 @@ export default function SettingsModal({ onClose }) {
         switch (activeTab) {
             case 'tags': return <TagSettings />;
             case 'general': return <div className="setting-section"><p>General options coming soon...</p></div>;
-            case 'data': return <div className="setting-section"><p>Database options coming soon...</p></div>;
-            default: return null;
+            case 'data': return <DataSettings />;
         }
     };
 

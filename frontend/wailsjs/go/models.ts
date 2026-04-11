@@ -1,5 +1,23 @@
 export namespace backend {
 	
+	export class DBStats {
+	    fileSize: string;
+	    totalFiles: number;
+	    totalObjectSize: string;
+	    entryCount: number;
+	
+	    static createFrom(source: any = {}) {
+	        return new DBStats(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.fileSize = source["fileSize"];
+	        this.totalFiles = source["totalFiles"];
+	        this.totalObjectSize = source["totalObjectSize"];
+	        this.entryCount = source["entryCount"];
+	    }
+	}
 	export class Entry {
 	    id: number;
 	    library_id: number;

@@ -42,6 +42,10 @@ export function DeleteVaultFolder(arg1) {
   return window['go']['backend']['App']['DeleteVaultFolder'](arg1);
 }
 
+export function ExportBackup() {
+  return window['go']['backend']['App']['ExportBackup']();
+}
+
 export function ExportLibraryCSV(arg1) {
   return window['go']['backend']['App']['ExportLibraryCSV'](arg1);
 }
@@ -56,6 +60,10 @@ export function GetAllTags() {
 
 export function GetAllVaultFiles() {
   return window['go']['backend']['App']['GetAllVaultFiles']();
+}
+
+export function GetDatabaseStats() {
+  return window['go']['backend']['App']['GetDatabaseStats']();
 }
 
 export function GetEntries(arg1) {
@@ -108,6 +116,10 @@ export function RenameVaultFile(arg1, arg2) {
 
 export function RenameVaultFolder(arg1, arg2) {
   return window['go']['backend']['App']['RenameVaultFolder'](arg1, arg2);
+}
+
+export function RunDatabaseMaintenance() {
+  return window['go']['backend']['App']['RunDatabaseMaintenance']();
 }
 
 export function SaveEntry(arg1) {

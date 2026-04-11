@@ -5,6 +5,8 @@ import (
 	"embed"
 	"log"
 	"net/http"
+	"os"
+	"path/filepath"
 
 	"github.com/wailsapp/wails/v2"
 	"github.com/wailsapp/wails/v2/pkg/options"
@@ -14,21 +16,35 @@ import (
 //go:embed all:frontend/dist
 var assets embed.FS
 
+// getDBPath asegura que la base de datos se guarde en una ruta estándar del sistema operativo
+// (ej. AppData/Roaming/Compendium en Windows, o ~/.config/Compendium en Linux/Mac)
+func getDBPath() string {
+	configDir, err := os.UserConfigDir()
+	if err != nil {
+		configDir = "." // Fallback al directorio actual si hay error
+	}
+	appDir := filepath.Join(configDir, "Compendium")
+
+	// Crea las carpetas si no existen
+	os.MkdirAll(appDir, os.ModePerm)
+
+	return filepath.Join(appDir, "compendium.db")
+}
+
 func main() {
-	// USE THE BACKEND PACKAGE FOR INIT
-	myDB, err := backend.InitDB("./compendium.db")
+	dbPath := getDBPath()
+	log.Println("Database path:", dbPath)
+
+	myDB, err := backend.InitDB(dbPath)
 	if err != nil {
 		log.Fatal("Could not open database:", err)
 	}
-
 	defer myDB.Close()
 
-	// USE THE BACKEND PACKAGE FOR APP
-	app := backend.NewApp(myDB)
+	app := backend.NewApp(myDB, dbPath)
 
 	go func() {
 		mux := http.NewServeMux()
-		// app.StreamHandler still works perfectly!
 		mux.HandleFunc("/stream/", app.StreamHandler)
 
 		log.Println("Sidecar streaming server running on http://localhost:40001")
@@ -37,7 +53,6 @@ func main() {
 		}
 	}()
 
-	// PASS THE WHOLE DB STRUCT, NOT JUST THE CONN
 	imgHandler := backend.NewImageHandler(myDB)
 
 	err = wails.Run(&options.App{
@@ -51,9 +66,9 @@ func main() {
 		},
 
 		BackgroundColour: &options.RGBA{R: 27, G: 38, B: 54, A: 1},
-		OnStartup:        app.Startup, // Still works!
+		OnStartup:        app.Startup,
 		Bind: []interface{}{
-			app, // Wails will automatically inspect this and bind all the exported backend methods!
+			app,
 		},
 	})
 

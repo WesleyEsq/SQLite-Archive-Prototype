@@ -3,6 +3,7 @@ package backend
 import (
 	"database/sql"
 	"fmt"
+	"os"
 	"strings"
 
 	_ "modernc.org/sqlite"
@@ -51,6 +52,13 @@ type File struct {
 // DB handles all direct database interactions
 type DB struct {
 	conn *sql.DB
+}
+
+type DBStats struct {
+	FileSize        string `json:"fileSize"`
+	TotalFiles      int    `json:"totalFiles"`
+	TotalObjectSize string `json:"totalObjectSize"`
+	EntryCount      int    `json:"entryCount"`
 }
 
 func (db *DB) Close() error {
@@ -453,4 +461,30 @@ func (db *DB) GetEntriesByTag(libraryID int, tagID int) ([]Entry, error) {
 		entries = append(entries, e)
 	}
 	return entries, nil
+}
+
+// GetStats calcula el tamaño del archivo y el uso interno
+func (db *DB) GetStats(dbPath string) (DBStats, error) {
+	var stats DBStats
+	fileInfo, err := os.Stat(dbPath)
+	if err == nil {
+		stats.FileSize = fmt.Sprintf("%.2f MB", float64(fileInfo.Size())/1024/1024)
+	}
+	var blobBytes int64
+	db.conn.QueryRow("SELECT COALESCE(SUM(LENGTH(data)), 0) FROM objects").Scan(&blobBytes)
+	stats.TotalObjectSize = fmt.Sprintf("%.2f MB", float64(blobBytes)/1024/1024)
+	return stats, nil
+}
+
+// Optimize ejecuta VACUUM para defragmentar y recuperar espacio de archivos borrados
+func (db *DB) Optimize() error {
+	_, err := db.conn.Exec("VACUUM") // Recupera espacio de archivos borrados
+	return err
+}
+
+// BackupLive usa 'VACUUM INTO' para crear una copia consistente sin bloquear la App
+func (db *DB) BackupLive(destPath string) error {
+	// VACUUM INTO es la forma más segura de copiar una DB SQLite activa
+	_, err := db.conn.Exec(fmt.Sprintf("VACUUM INTO '%s'", destPath))
+	return err
 }

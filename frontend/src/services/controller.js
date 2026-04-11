@@ -76,5 +76,10 @@ export const backend = {
         renameFolder: (oldPath, newPath) => Wails.RenameVaultFolder(oldPath, newPath),
         deleteFolder: (path) => Wails.DeleteVaultFolder(path),
     },
+    db: {
+        getStats: () => Wails.GetDatabaseStats(),
+        optimize: () => Wails.RunDatabaseMaintenance(),
+        exportBackup: () => Wails.ExportBackup(),
+    },
 };
 
