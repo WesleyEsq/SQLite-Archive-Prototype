@@ -55,10 +55,9 @@ type DB struct {
 }
 
 type DBStats struct {
-	FileSize        string `json:"fileSize"`
-	TotalFiles      int    `json:"totalFiles"`
-	TotalObjectSize string `json:"totalObjectSize"`
-	EntryCount      int    `json:"entryCount"`
+	FileSize   string `json:"fileSize"`
+	TotalFiles int    `json:"totalFiles"`
+	EntryCount int    `json:"entryCount"`
 }
 
 func (db *DB) Close() error {
@@ -98,13 +97,10 @@ func InitDB(path string) (*DB, error) {
 	// 4. DATABASE DOCTOR: Self-Healing Routines
 	// ==========================================
 
-	// A. Purge Ghost BLOBs (Orphans in the objects table)
-	_, _ = db.Exec("DELETE FROM objects WHERE file_id NOT IN (SELECT id FROM files);")
-
-	// B. Purge Ghost Links (Orphans in the junction table)
+	// a. Purge Ghost Links (Orphans in the junction table)
 	_, _ = db.Exec("DELETE FROM groupset_files WHERE file_id NOT IN (SELECT id FROM files);")
 
-	// C. Repair the AUTOINCREMENT Sequence
+	// b. Repair the AUTOINCREMENT Sequence
 	// 1. Ensure the sequence row exists for the files table
 	_, _ = db.Exec("INSERT INTO sqlite_sequence (name, seq) SELECT 'files', 0 WHERE NOT EXISTS (SELECT 1 FROM sqlite_sequence WHERE name = 'files');")
 
@@ -115,17 +111,16 @@ func InitDB(path string) (*DB, error) {
 
 func createTables(db *sql.DB) error {
 	queries := []string{
-		// 1. Top-Level Libraries
+		// 1. Top-Level Libraries (¡Adiós a cover_image BLOB!)
 		`CREATE TABLE IF NOT EXISTS libraries (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             name TEXT NOT NULL,
             type TEXT,
             author TEXT,
-            description TEXT,
-            cover_image BLOB
+            description TEXT
         );`,
 
-		// 2. Generic Entries (No blobs!)
+		// 2. Generic Entries (Sin cambios)
 		`CREATE TABLE IF NOT EXISTS entries (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             library_id INTEGER NOT NULL,
@@ -138,7 +133,7 @@ func createTables(db *sql.DB) error {
             FOREIGN KEY(library_id) REFERENCES libraries(id) ON DELETE CASCADE
         );`,
 
-		// 3. Groupings (Seasons, Volumes, Cover Art group)
+		// 3. Groupings (Sin cambios)
 		`CREATE TABLE IF NOT EXISTS group_sets (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             entry_id INTEGER NOT NULL,
@@ -148,7 +143,7 @@ func createTables(db *sql.DB) error {
             FOREIGN KEY(entry_id) REFERENCES entries(id) ON DELETE CASCADE
         );`,
 
-		// 4. File Metadata (Lightning fast to query)
+		// 4. File Metadata (Sin cambios - Seguiremos usando esto para buscar archivos rápidos)
 		`CREATE TABLE IF NOT EXISTS files (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             filename TEXT,
@@ -157,14 +152,9 @@ func createTables(db *sql.DB) error {
 			virtual_path TEXT DEFAULT '/'
         );`,
 
-		// 5. The Pure-SQLite Object Store (1:1 with files)
-		`CREATE TABLE IF NOT EXISTS objects (
-            file_id INTEGER PRIMARY KEY,
-            data BLOB NOT NULL,
-            FOREIGN KEY(file_id) REFERENCES files(id) ON DELETE CASCADE
-        );`,
+		// NOTA: La tabla 'objects' fue ELIMINADA aquí.
 
-		// 6. Tags Definition
+		// 5. Tags Definition
 		`CREATE TABLE IF NOT EXISTS tags (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             name TEXT NOT NULL UNIQUE,
@@ -172,7 +162,7 @@ func createTables(db *sql.DB) error {
             icon TEXT
         );`,
 
-		// 7. Tags to Entries mapping
+		// 6. Tags to Entries mapping
 		`CREATE TABLE IF NOT EXISTS entry_tags (
             entry_id INTEGER NOT NULL,
             tag_id INTEGER NOT NULL,
@@ -181,14 +171,9 @@ func createTables(db *sql.DB) error {
             FOREIGN KEY(tag_id) REFERENCES tags(id) ON DELETE CASCADE
         );`,
 
-		// 8. Table for image covers for entries
-		`CREATE TABLE IF NOT EXISTS entry_covers (
-            entry_id INTEGER PRIMARY KEY,
-            image_data BLOB NOT NULL,
-            FOREIGN KEY(entry_id) REFERENCES entries(id) ON DELETE CASCADE
-        );`,
+		// NOTA: La tabla 'entry_covers' fue ELIMINADA aquí.
 
-		// 9. Many-to-Many Vault Link Table
+		// 7. Many-to-Many Vault Link Table
 		`CREATE TABLE IF NOT EXISTS groupset_files (
             groupset_id INTEGER,
             file_id INTEGER,
@@ -198,7 +183,7 @@ func createTables(db *sql.DB) error {
             FOREIGN KEY(file_id) REFERENCES files(id) ON DELETE CASCADE
         );`,
 
-		// 11. Category Tags
+		// 8. Category Tags
 		`CREATE TABLE IF NOT EXISTS category_tags (
 			tag_id INTEGER PRIMARY KEY,
 			FOREIGN KEY(tag_id) REFERENCES tags(id) ON DELETE CASCADE
@@ -211,16 +196,8 @@ func createTables(db *sql.DB) error {
 		}
 	}
 
-	db.Exec(`
-        INSERT INTO entry_covers (entry_id, image_data)
-        SELECT g.entry_id, o.data
-        FROM group_sets g
-        JOIN files f ON f.groupset_id = g.id
-        JOIN objects o ON o.file_id = f.id
-        WHERE g.category = 'Cover Art'
-        ON CONFLICT(entry_id) DO NOTHING;
-    `)
-	db.Exec(`DELETE FROM group_sets WHERE category = 'Cover Art';`)
+	// NOTA: Elimina también el bloque de db.Exec(`INSERT INTO entry_covers...`)
+	// que estaba al final de tu función original. Ya no existe esa tabla.
 
 	return nil
 }
@@ -466,13 +443,15 @@ func (db *DB) GetEntriesByTag(libraryID int, tagID int) ([]Entry, error) {
 // GetStats calcula el tamaño del archivo y el uso interno
 func (db *DB) GetStats(dbPath string) (DBStats, error) {
 	var stats DBStats
+	// 1. Tamaño del archivo .db
 	fileInfo, err := os.Stat(dbPath)
 	if err == nil {
 		stats.FileSize = fmt.Sprintf("%.2f MB", float64(fileInfo.Size())/1024/1024)
 	}
-	var blobBytes int64
-	db.conn.QueryRow("SELECT COALESCE(SUM(LENGTH(data)), 0) FROM objects").Scan(&blobBytes)
-	stats.TotalObjectSize = fmt.Sprintf("%.2f MB", float64(blobBytes)/1024/1024)
+	// 2. Conteos básicos
+	db.conn.QueryRow("SELECT COUNT(*) FROM entries").Scan(&stats.EntryCount)
+	db.conn.QueryRow("SELECT COUNT(*) FROM files").Scan(&stats.TotalFiles)
+
 	return stats, nil
 }
 

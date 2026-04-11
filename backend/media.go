@@ -32,47 +32,26 @@ func (db *DB) DeleteGroupSet(id int) error {
 // --- File & Object Logic (Replacing MediaAsset) ---
 
 // AddFile handles the relationship securely via a Transaction.
-func (db *DB) AddFile(groupsetID int, filename, mimeType string, sizeBytes int64, data []byte, sortOrder int) (int, error) {
+func (db *DB) AddFile(groupsetID int, filename, mimeType string, sizeBytes int64, sortOrder int) (int, error) {
 	tx, err := db.conn.Begin()
 	if err != nil {
 		return 0, err
 	}
 	defer tx.Rollback()
 
-	// 1. Insert into the pure 'files' vault (No groupset_id!)
-	res, err := tx.Exec(
-		"INSERT INTO files (filename, mime_type, size_bytes) VALUES (?, ?, ?)",
-		filename, mimeType, sizeBytes,
-	)
+	res, err := tx.Exec("INSERT INTO files (filename, mime_type, size_bytes) VALUES (?, ?, ?)", filename, mimeType, sizeBytes)
 	if err != nil {
 		return 0, err
 	}
 
-	fileID, err := res.LastInsertId()
+	fileID, _ := res.LastInsertId()
+
+	_, err = tx.Exec("INSERT INTO groupset_files (groupset_id, file_id, sort_order) VALUES (?, ?, ?)", groupsetID, fileID, sortOrder)
 	if err != nil {
 		return 0, err
 	}
 
-	// 2. Insert the heavy BLOB into 'objects'
-	_, err = tx.Exec(
-		"INSERT INTO objects (file_id, data) VALUES (?, ?)",
-		fileID, data,
-	)
-	if err != nil {
-		return 0, err
-	}
-
-	// 3. Create the Link in the Junction Table
-	_, err = tx.Exec(
-		"INSERT INTO groupset_files (groupset_id, file_id, sort_order) VALUES (?, ?, ?)",
-		groupsetID, fileID, sortOrder,
-	)
-	if err != nil {
-		return 0, err
-	}
-
-	err = tx.Commit()
-	return int(fileID), err
+	return int(fileID), tx.Commit()
 }
 
 // UnlinkFile removes the file from the group, but keeps it safe in the Vault!
@@ -91,27 +70,7 @@ func (db *DB) UpdateFileMetadata(id int, filename, mimeType string, sortOrder in
 	return err
 }
 
-// FetchFileBlob retrieves the raw bytes and mime_type for the streaming server.
-func (db *DB) FetchFileBlob(fileID int) ([]byte, string, error) {
-	var data []byte
-	var mimeType string
-
-	// Join the heavy object table with the fast metadata table
-	query := `
-		SELECT o.data, f.mime_type 
-		FROM objects o
-		JOIN files f ON f.id = o.file_id
-		WHERE f.id = ?
-	`
-	err := db.conn.QueryRow(query, fileID).Scan(&data, &mimeType)
-	if err != nil {
-		return nil, "", err
-	}
-	return data, mimeType, nil
-}
-
 // UpdateFileOrder takes a list of files and updates their sort_order in a transaction
-// UpdateFileOrder updates the sorting in the junction table
 func (db *DB) UpdateFileOrder(files []File) error {
 	tx, err := db.conn.Begin()
 	if err != nil {

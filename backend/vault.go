@@ -26,35 +26,14 @@ func (db *DB) GetAllVaultFiles() ([]File, error) {
 }
 
 // UploadVaultFile directly uploads a file to the vault without attaching it to an entry.
-func (db *DB) UploadVaultFile(filename, mimeType string, sizeBytes int64, data []byte, virtualPath string) (int, error) {
-	tx, err := db.conn.Begin()
-	if err != nil {
-		return 0, err
-	}
-	defer tx.Rollback()
-
-	// 1. Insert into files with the virtual path
-	res, err := tx.Exec(
-		"INSERT INTO files (filename, mime_type, size_bytes, virtual_path) VALUES (?, ?, ?, ?)",
-		filename, mimeType, sizeBytes, virtualPath,
-	)
+func (db *DB) UploadVaultFile(filename, mimeType string, sizeBytes int64, virtualPath string) (int, error) {
+	res, err := db.conn.Exec("INSERT INTO files (filename, mime_type, size_bytes, virtual_path) VALUES (?, ?, ?, ?)", filename, mimeType, sizeBytes, virtualPath)
 	if err != nil {
 		return 0, err
 	}
 
-	fileID, err := res.LastInsertId()
-	if err != nil {
-		return 0, err
-	}
-
-	// 2. Insert the heavy BLOB into objects
-	_, err = tx.Exec("INSERT INTO objects (file_id, data) VALUES (?, ?)", fileID, data)
-	if err != nil {
-		return 0, err
-	}
-
-	err = tx.Commit()
-	return int(fileID), err
+	fileID, _ := res.LastInsertId()
+	return int(fileID), nil
 }
 
 // MoveVaultFile changes the virtual directory of a file.

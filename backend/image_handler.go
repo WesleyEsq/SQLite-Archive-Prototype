@@ -1,57 +1,56 @@
+// backend/image_handler.go
 package backend
 
 import (
 	"crypto/md5"
 	"fmt"
 	"net/http"
+	"os"
+	"path/filepath"
 	"strconv"
 	"strings"
 )
 
 type ImageHandler struct {
-	db *DB 
+	mediaDir string
 }
 
-func NewImageHandler(db *DB) *ImageHandler { 
-	return &ImageHandler{db: db}
+// Modificamos el constructor para recibir la ruta de la DB y calcular dónde está la carpeta media
+func NewImageHandler(dbPath string) *ImageHandler {
+	dir := filepath.Join(filepath.Dir(dbPath), "media")
+	return &ImageHandler{mediaDir: dir}
 }
 
-// AssetMiddleware intercepts requests to /images/ and serves them from SQLite
+// AssetMiddleware intercepts requests to /images/ and serves them from the File System
 func (h *ImageHandler) AssetMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 
-		// Helper function to handle ETag caching logic cleanly
+		// Helper function para ETag caching (¡Intacto!)
 		serveWithETag := func(imgData []byte) {
-			// 1. Generate a quick MD5 hash of the image bytes
 			hash := md5.Sum(imgData)
 			etag := fmt.Sprintf(`"%x"`, hash)
 
-			// 2. Set headers
 			w.Header().Set("ETag", etag)
-			// 'no-cache' forces the browser to revalidate the ETag every single time
 			w.Header().Set("Cache-Control", "no-cache")
 			w.Header().Set("Content-Type", "image/jpeg")
 
-			// 3. Check if the browser already has this exact image version
 			if match := r.Header.Get("If-None-Match"); match == etag {
-				// The image hasn't changed! Send a 0-byte response to save memory/bandwidth
 				w.WriteHeader(http.StatusNotModified)
 				return
 			}
-
-			// 4. The image is new (or not cached yet). Send the full bytes.
 			w.Write(imgData)
 		}
 
 		// --- 1. Handle Library Covers ---
 		if strings.HasPrefix(r.URL.Path, "/images/library/") {
 			idStr := strings.TrimPrefix(r.URL.Path, "/images/library/")
-			idStr = strings.Split(idStr, "?")[0] 
+			idStr = strings.Split(idStr, "?")[0]
 			libID, _ := strconv.Atoi(idStr)
 
-			var imgData []byte
-			// 4. ADD .conn HERE to access the underlying connection
-			err := h.db.conn.QueryRow("SELECT cover_image FROM libraries WHERE id = ?", libID).Scan(&imgData) 
+			// NUEVO: Leer del File System
+			imgPath := filepath.Join(h.mediaDir, "library_covers", fmt.Sprintf("%d.jpg", libID))
+			imgData, err := os.ReadFile(imgPath)
+
 			if err == nil && len(imgData) > 0 {
 				serveWithETag(imgData)
 				return
@@ -63,7 +62,7 @@ func (h *ImageHandler) AssetMiddleware(next http.Handler) http.Handler {
 		// --- 2. Handle Entry Covers ---
 		if strings.HasPrefix(r.URL.Path, "/images/") {
 			idStr := strings.TrimPrefix(r.URL.Path, "/images/")
-			idStr = strings.Split(idStr, "?")[0] 
+			idStr = strings.Split(idStr, "?")[0]
 			entryID, err := strconv.Atoi(idStr)
 
 			if err != nil {
@@ -71,8 +70,15 @@ func (h *ImageHandler) AssetMiddleware(next http.Handler) http.Handler {
 				return
 			}
 
-			var imgData []byte
-			err = h.db.conn.QueryRow("SELECT image_data FROM entry_covers WHERE entry_id = ?", entryID).Scan(&imgData)
+			// Leer del File System
+			imgPath := filepath.Join(h.mediaDir, "entry_covers", fmt.Sprintf("%d.jpg", entryID))
+			imgData, readErr := os.ReadFile(imgPath)
+			if readErr == nil && len(imgData) > 0 {
+				serveWithETag(imgData)
+				return
+			}
+			imgData, err = os.ReadFile(imgPath)
+
 			if err == nil && len(imgData) > 0 {
 				serveWithETag(imgData)
 				return

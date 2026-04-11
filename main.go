@@ -53,7 +53,7 @@ func main() {
 		}
 	}()
 
-	imgHandler := backend.NewImageHandler(myDB)
+	imgHandler := backend.NewImageHandler(dbPath)
 
 	err = wails.Run(&options.App{
 		Title:  "Local Compendium",

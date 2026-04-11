@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/csv"
 	"fmt"
+	"io"
 	"net/http"
 	"os"
 	"path/filepath"
@@ -96,36 +97,50 @@ func (a *App) CreateGroupSet(entryID int, title, category string) error {
 
 // ImportFile opens a native OS dialog, reads the file, and stuffs it into SQLite
 func (a *App) ImportFile(groupsetID int) error {
-	// 1. Open File Dialog via Wails
-	selection, err := runtime.OpenFileDialog(a.ctx, runtime.OpenDialogOptions{
-		Title: "Select Media File to Archive",
-	})
+	selection, err := runtime.OpenFileDialog(a.ctx, runtime.OpenDialogOptions{Title: "Select Media File"})
 	if err != nil || selection == "" {
-		return nil // User cancelled
+		return nil
 	}
 
-	// 2. Read the massive file into memory
-	data, err := os.ReadFile(selection)
+	// 1. Obtener Info
+	fileInfo, err := os.Stat(selection)
 	if err != nil {
-		return fmt.Errorf("failed to read file: %w", err)
+		return err
 	}
-
-	// 3. Extract Metadata
 	filename := filepath.Base(selection)
-	sizeBytes := int64(len(data))
+	sizeBytes := fileInfo.Size()
 
-	// Detect MimeType
-	mimeType := http.DetectContentType(data)
-	// http.DetectContentType sometimes falls back to application/octet-stream for mp4/mkv.
-	// You might want to add a switch statement here based on filepath.Ext(selection) for better accuracy.
-
-	// 4. Execute the 1:1 Transaction we wrote in media.go
-	_, err = a.db.AddFile(groupsetID, filename, mimeType, sizeBytes, data, 0)
+	// 2. Abrir archivo origen y detectar MimeType (solo leyendo 512 bytes)
+	src, err := os.Open(selection)
 	if err != nil {
-		return fmt.Errorf("database insertion failed: %w", err)
+		return err
+	}
+	defer src.Close()
+
+	buffer := make([]byte, 512)
+	src.Read(buffer)
+	mimeType := http.DetectContentType(buffer)
+	src.Seek(0, 0) // ¡CRÍTICO! Regresar el puntero al inicio del archivo
+
+	// 3. Guardar metadatos en SQLite para obtener el ID
+	fileID, err := a.db.AddFile(groupsetID, filename, mimeType, sizeBytes, 0)
+	if err != nil {
+		return err
 	}
 
-	return nil
+	// 4. Copiar el archivo al disco duro (Streaming directo, sin picos de RAM)
+	vaultDir := filepath.Join(filepath.Dir(a.dbPath), "media", "vault")
+	os.MkdirAll(vaultDir, os.ModePerm)
+
+	destPath := filepath.Join(vaultDir, fmt.Sprintf("%d_%s", fileID, filename))
+	dest, err := os.Create(destPath)
+	if err != nil {
+		return err
+	}
+	defer dest.Close()
+
+	_, err = io.Copy(dest, src) // Copia de disco a disco
+	return err
 }
 
 // SetCoverImage is a special helper to attach a cover to an Entry
@@ -145,8 +160,11 @@ func (a *App) SetCoverImage(entryID int) error {
 		return err
 	}
 
-	// Just pass it straight to the new 1:1 table!
-	return a.db.SetEntryCover(entryID, data)
+	coversDir := filepath.Join(filepath.Dir(a.dbPath), "media", "entry_covers")
+	os.MkdirAll(coversDir, os.ModePerm)
+
+	targetPath := filepath.Join(coversDir, fmt.Sprintf("%d.jpg", entryID))
+	return os.WriteFile(targetPath, data, 0644)
 }
 
 // ==========================================
@@ -198,20 +216,39 @@ func (a *App) UpdateFileOrder(files []File) error {
 }
 
 // Ensure ExportMediaAsset uses the new FetchFileBlob:
-func (a *App) ExportMediaAsset(fileID int, filename string) error {
-	data, _, err := a.db.FetchFileBlob(fileID)
-	if err != nil {
-		return err
-	}
+// En backend/app.go
 
+// ExportMediaAsset copia un archivo desde el Vault local hacia la ruta que el usuario elija
+func (a *App) ExportMediaAsset(fileID int, filename string) error {
+	// 1. Preguntar al usuario dónde quiere guardar el archivo
 	selection, err := runtime.SaveFileDialog(a.ctx, runtime.SaveDialogOptions{
-		Title: "Save File", DefaultFilename: filename,
+		Title:           "Save File",
+		DefaultFilename: filename,
 	})
 	if err != nil || selection == "" {
-		return nil
+		return nil // El usuario canceló
 	}
 
-	return os.WriteFile(selection, data, 0644)
+	// 2. Abrir el archivo de origen desde nuestro disco duro (El Vault)
+	vaultDir := filepath.Join(filepath.Dir(a.dbPath), "media", "vault")
+	sourcePath := filepath.Join(vaultDir, fmt.Sprintf("%d_%s", fileID, filename))
+
+	src, err := os.Open(sourcePath)
+	if err != nil {
+		return fmt.Errorf("no se pudo abrir el archivo original: %w", err)
+	}
+	defer src.Close()
+
+	// 3. Crear el archivo de destino donde el usuario pidió
+	dest, err := os.Create(selection)
+	if err != nil {
+		return fmt.Errorf("no se pudo crear el archivo de destino: %w", err)
+	}
+	defer dest.Close()
+
+	// 4. Copiar los datos de disco a disco sin saturar la RAM
+	_, err = io.Copy(dest, src)
+	return err
 }
 
 func (a *App) GetLibrary(id int) (*Library, error) {
@@ -237,7 +274,11 @@ func (a *App) SetLibraryCover(libraryID int) error {
 		return err
 	}
 
-	return a.db.UpdateLibraryCover(libraryID, data)
+	coversDir := filepath.Join(filepath.Dir(a.dbPath), "media", "library_covers")
+	os.MkdirAll(coversDir, os.ModePerm)
+
+	targetPath := filepath.Join(coversDir, fmt.Sprintf("%d.jpg", libraryID))
+	return os.WriteFile(targetPath, data, 0644)
 }
 
 // ==========================================
@@ -359,36 +400,69 @@ func (a *App) DeleteVaultFile(fileID int) error {
 }
 
 // CreateVaultFolder uses the S3 trick: it creates a 0-byte hidden file to force the path to exist.
-func (a *App) CreateVaultFolder(path string) error {
-	_, err := a.db.UploadVaultFile(".keep", "application/x-directory", 0, []byte(""), path)
-	return err
-}
-
-// PromptAndUploadVaultFile opens the native OS file picker and saves the file directly to SQLite.
-func (a *App) PromptAndUploadVaultFile(virtualPath string) error {
-	// 1. Open Native File Picker
-	selection, err := runtime.OpenFileDialog(a.ctx, runtime.OpenDialogOptions{
-		Title: "Select File to Upload to Vault",
-	})
-	if err != nil || selection == "" {
-		return nil // User canceled the dialog, no error needed
-	}
-
-	// 2. Read the file directly from the OS
-	data, err := os.ReadFile(selection)
+func (a *App) CreateVaultFolder(virtualPath string) error {
+	// 1. Crear el registro en la base de datos
+	fileID, err := a.db.UploadVaultFile(".keep", "application/x-directory", 0, virtualPath)
 	if err != nil {
 		return err
 	}
 
-	// 3. Extract metadata
+	// 2. Crear un archivo físico vacío (0 bytes) en el disco duro para mantener la consistencia 1:1
+	vaultDir := filepath.Join(filepath.Dir(a.dbPath), "media", "vault")
+	os.MkdirAll(vaultDir, os.ModePerm)
+
+	destPath := filepath.Join(vaultDir, fmt.Sprintf("%d_.keep", fileID))
+	dest, err := os.Create(destPath)
+	if err != nil {
+		return err
+	}
+	// Lo cerramos inmediatamente porque no necesitamos escribirle nada adentro
+	dest.Close()
+
+	return nil
+}
+
+// PromptAndUploadVaultFile opens the native OS file picker and saves the file directly to SQLite.
+func (a *App) PromptAndUploadVaultFile(virtualPath string) error {
+	selection, err := runtime.OpenFileDialog(a.ctx, runtime.OpenDialogOptions{Title: "Select File to Upload to Vault"})
+	if err != nil || selection == "" {
+		return nil
+	}
+
+	fileInfo, err := os.Stat(selection)
+	if err != nil {
+		return err
+	}
 	filename := filepath.Base(selection)
-	sizeBytes := int64(len(data))
+	sizeBytes := fileInfo.Size()
 
-	// Fast mime-type detection (first 512 bytes)
-	mimeType := http.DetectContentType(data)
+	src, err := os.Open(selection)
+	if err != nil {
+		return err
+	}
+	defer src.Close()
 
-	// 4. Send to Vault
-	_, err = a.db.UploadVaultFile(filename, mimeType, sizeBytes, data, virtualPath)
+	buffer := make([]byte, 512)
+	src.Read(buffer)
+	mimeType := http.DetectContentType(buffer)
+	src.Seek(0, 0)
+
+	fileID, err := a.db.UploadVaultFile(filename, mimeType, sizeBytes, virtualPath)
+	if err != nil {
+		return err
+	}
+
+	vaultDir := filepath.Join(filepath.Dir(a.dbPath), "media", "vault")
+	os.MkdirAll(vaultDir, os.ModePerm)
+
+	destPath := filepath.Join(vaultDir, fmt.Sprintf("%d_%s", fileID, filename))
+	dest, err := os.Create(destPath)
+	if err != nil {
+		return err
+	}
+	defer dest.Close()
+
+	_, err = io.Copy(dest, src)
 	return err
 }
 

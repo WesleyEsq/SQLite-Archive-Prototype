@@ -3,7 +3,6 @@ export namespace backend {
 	export class DBStats {
 	    fileSize: string;
 	    totalFiles: number;
-	    totalObjectSize: string;
 	    entryCount: number;
 	
 	    static createFrom(source: any = {}) {
@@ -14,7 +13,6 @@ export namespace backend {
 	        if ('string' === typeof source) source = JSON.parse(source);
 	        this.fileSize = source["fileSize"];
 	        this.totalFiles = source["totalFiles"];
-	        this.totalObjectSize = source["totalObjectSize"];
 	        this.entryCount = source["entryCount"];
 	    }
 	}
