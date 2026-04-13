@@ -284,7 +284,7 @@
     position: absolute;
     top: 0; left: 0; right: 0; bottom: 0;
     /* Uses your deep ruby and vivid raspberry colors, slightly transparent */
-    background: linear-gradient(135deg, rgba(128, 15, 47, 0.95) 0%, rgba(201, 24, 74, 0.75) 100%);
+    background: rgba(128, 15, 47, 0.95);
     z-index: 1;
 }
 
@@ -402,3 +402,15 @@
     padding-bottom: 5px;
 }
 .hero-description p { margin-bottom: 10px; }
+
+.hero-description a {
+    color: rgba(255,255,255,0.9);
+    text-decoration: underline;
+    transition: color 0.2s;
+}
+
+
+.hero-description strong {
+    color: white;
+    font-weight: 700;
+}

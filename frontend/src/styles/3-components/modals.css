@@ -23,7 +23,7 @@
 }
 
 .pro-modal-header {
-    background-color: var(--header-bg);
+    background-color: var(--button-bg);
     color: white;
     padding: 15px 25px;
     display: flex;
